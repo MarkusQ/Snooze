@@ -76,6 +76,7 @@ class_instance_methods.bind_REST_class = function (name) { /* stub till we build
 class_instance_methods.name = 'class';
 class_instance_methods.to_s = function () { return this.name };
 class_instance_methods.find =  function (id) {
+    console.log("Looking for",id,"in",this.name);
     return this.instances[id] || this.instances.find_first(function (x) { return x.name == id; })
     };
 
@@ -88,19 +89,25 @@ var class  = chain(object,'ccm');
 class.instance_methods = class_instance_methods;
 class.instance_methods.class = class;
 
-/*
 class.new = function (name,parent) {
     parent = parent || object;
     var result = chain(parent,'['+name+'-cm]');
     result.instance_methods = chain(parent.instance_methods,'['+name+'-im]');
     result.instance_methods.class = result;
+    (result.initialize || class.initialize).apply(result,arguments);
     return result
     };
-*/
 
 class.instances = [];
 object.initialize('object');
 class.initialize('class');
+
+Object.prototype.life_story = "JSObj";
+
+console.log("class.new should not be the same as object.new",class.new != object.new && 'pass' || 'fail');
+console.log( class.life_story);
+console.log(object.life_story);
+
 
 //
 //     Rest operations
@@ -113,7 +120,7 @@ object.instance_methods.to_html  = function () {
       '<h1>'+this.to_so()+'</h1>',
       '<h2>Class</h2>'+this.class.to_link(),
       (this.methods && ['<h2>Methods</h2>',forms_for(this.methods) ]),
-      '<h2>Instances</h2>',
+      '<h2>Instances 1</h2>',
       (this.instances || "Too numerous to list").to_html()
       ].join('')
     };
@@ -135,20 +142,27 @@ class.instance_methods.bind_REST_class = function (name) {
 
 class.bind_REST_class('class');
 object.bind_REST_class('object');
-/*
-class.instance_methods.to_html: function () { 
+
+class.instance_methods.to_html = function () { 
     return [
       '<h1>'+this.name+'</h1>',
       this.super && ('<h2>Superclass</h2>'+this.super.to_link()),
       (this.methods && ['<h2>Methods</h2>' + this.methods.map(function (m) { form(this,m['method']||'get',m['message'],m['args']||[])}).join('') ]) || '',
-      '<h2>Instances</h2>',
+      '<h2>Instances 2</h2>',
       (this.instances || "Too numerous to list").to_html()
     ].join('')
   }
-*/
+
 
 class.instance_methods.show = function(req, res) {
-    res.send((this.find(req.params.id) || ('Cannot find '+this.name+'/'+req.params.id)).to_html()+' in '+this.instances.map(function (x) { util.inspect(x)}).to_html());
+//    res.send(this.find(req.params.id).to_html());
+//    res.send((this.find(req.params.id) || ('Cannot find '+this.name+'/'+req.params.id)).to_html()+' in '+this.instances.map(function (x) { return util.inspect(x)}).to_html());
+//    console.log(util.inspect(this.find(req.params.id)));
+    res.send((this.find(req.params.id) || (('Cannot find '+this.name+'/'+req.params.id)).to_html()+' in '+
+      this.instances.map(
+        function (x) { return "<b>"+(x.name || "<i>no name</i>")+"</b>"+util.inspect(x)}
+      )).to_html()  
+    );
   };
 class.instance_methods.destroy = function(req, res){
     var id = req.params.id;
@@ -165,7 +179,7 @@ class.instance_methods.to_html = function () { return  [
           '<h1>'+this.to_s()+'</h1>',
           this.super && ('<h2>Superclass</h2>'+this.super.to_link()),
           (this.methods && ['<h2>Methods</h2>', forms_for(this.methods) ]),
-          '<h2>Instances</h2>',
+          '<h2>Instances 3</h2>',
           (this.instances || "Too numerous to list").to_html()
         ].join('')
       };
@@ -190,10 +204,11 @@ Object.prototype.to_format = function(format) {
         return this.to_html();
     }
   }
+Object.prototype.bind_REST_class = object.bind_REST_class;
 
 Array.prototype.to_html = function () { 
     return "<ul>"+
-        this.map(function(item){ return '<li>'+item.to_link()+'</li>'; }).join('\n') + 
+        this.map(function(item){ return '<li>'+((item && item.to_link && item.to_link()) || item || '<i>undefined</i>')+'</li>' ; }).join('\n') + 
         '</ul>';
 };
 Array.prototype.find_first = function (test) {
@@ -201,24 +216,33 @@ Array.prototype.find_first = function (test) {
     }
 
 Number.prototype.url     = function() { return "/number/"+this };
-Number.prototype.to_link = function() { return "<a href='"+this.url+"'>"+this+"</a>" };
+Number.prototype.to_link = function() { return "<a href='"+this.url()+"'>"+this+"</a>" };
 
 
 [String,Number,Array].map(function (cls) {
-    x = class.new(cls.name.toLowerCase(),{});
+    var x = chain(class)
+    x.life_story = cls.name;
+    x.instance_methods = cls;
+    class.new(cls.name.toLowerCase(),x);
   });
 
+console.log(class.instances.map(function (c) { return c.name || "no name"; }));
 class.find('number').find = parseFloat;
 class.find('number').methods = [
   { message: 'abs' }
 ]
-class.find('string').find = toString;
+
+class.find('string').find = String.toString;
 class.find('array').methods = [
   { message: 'length' }
 ]
 
-var enumeration = class.new('enumeration',{
-  initialize: function (name,values) {
+Function.prototype.toString = function () { return "function"; };
+//
+//  Now start using it...
+//
+var enumeration = class.new('enumeration')
+enumeration.instance_methods.initialize = function (name,values) {
     console.log('  enumeration.instance_methods.initialize');
     //this.super.instance_methods.initialize.apply(this,name);
     //class.instance_methods.initialize.apply(this);
@@ -228,8 +252,7 @@ var enumeration = class.new('enumeration',{
       return { name: x,  id: q-1 }
       });
     console.log(this.name,this.instances);
-    }
-  });
+    };
 
 var hue = enumeration.new('hue',['red','orange','yellow','green','blue','violet']);
 
