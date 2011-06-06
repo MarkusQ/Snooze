@@ -31,6 +31,7 @@ function forms_for(methods) {
 //
 //     Ruby-style class based object system
 //
+var managed_objects = [];
 
 function chain(parent,tag) {
     //console.log('parent is ',parent);
@@ -38,10 +39,10 @@ function chain(parent,tag) {
     f.prototype = parent;
     var result = new f();
     result.super = parent;
-    result.life_story = tag + ' ' + parent.life_story;
+    result.life_story = tag + ' ' + parent.life_story; //(parent && parent.life_story || '!!!');
+    managed_objects.push([result,parent]);
     return result;
     };
-
 
 var object_instance_methods = {
     new:    function (/*arguments*/) {
@@ -55,12 +56,17 @@ var object_instance_methods = {
         },
     life_story: 'oim',
     initialize: function (/*arguments*/) { console.log('  object.instance_methods.initialize'); },
+    methods: function () {
+        var result = [];
+        for (x in this) { result.push(x); }
+        return result;
+      },
     };
 
 
 var class_instance_methods = chain(object_instance_methods,'cim');
 
-class_instance_methods.initialize = function (name,instance_methods) {
+class_instance_methods.initialize = function (name,parent,instance_methods) {
     console.log(' ',name,'class.instance_methods.initialize');
     //this.super.initialize.apply(this);
     //if (!this.instance_methods) this.instance_methods = chain(this.super.instance_methods,'??'); 
@@ -80,7 +86,6 @@ class_instance_methods.find =  function (id) {
     return this.instances[id] || this.instances.find_first(function (x) { return x.name == id; })
     };
 
-
 var object = chain(class_instance_methods,'ocm');
 object.instance_methods = object_instance_methods;
 object.instance_methods.class = object;
@@ -88,13 +93,14 @@ object.instance_methods.class = object;
 var class  = chain(object,'ccm');
 class.instance_methods = class_instance_methods;
 class.instance_methods.class = class;
+//class.initialize  = function (/*arguments*/) { console.log('  class.initialize'); };
 
-class.new = function (name,parent) {
+class.new = function (name,parent,instance_methods) {
     parent = parent || object;
     var result = chain(parent,'['+name+'-cm]');
     result.instance_methods = chain(parent.instance_methods,'['+name+'-im]');
     result.instance_methods.class = result;
-    (result.initialize || class.initialize).apply(result,arguments);
+    result.initialize.apply(result,arguments);
     return result
     };
 
@@ -103,6 +109,78 @@ object.initialize('object');
 class.initialize('class');
 
 Object.prototype.life_story = "JSObj";
+
+function class_hierarchy_dot() {
+    function auto_inc(prefix) {
+        var count = 0;
+        return function () {
+            count += 1;
+            return prefix+"_"+count;
+          }
+        }
+    var new_node    = auto_inc('node'), 
+        new_cluster = auto_inc('cluster');
+    function if_not_set(obj,prop,val) {
+        if (!obj.hasOwnProperty(prop)) {
+            if (typeof val == 'function') { val = val(); }
+            obj[prop] = val;
+          }
+        }
+    function dot_node_name(obj) {
+        if_not_set(obj,"_dot_node_name",new_node);
+        return obj._dot_node_name;
+      }
+    function direct_methods(obj) {
+        var result = [];
+        for (x in obj) { if (obj.hasOwnProperty(x)) { result.push(x); } }
+        return result;
+      }
+    function dot_subgraph_for(obj) {
+        if (obj.hasOwnProperty('instance_methods') && !obj.hasOwnProperty('_dot_subgraph')) {
+            obj._dot_subgraph = true;
+            if_not_set(obj,                 '_dot_role',"{class\\nmethods\\n|"+direct_methods(obj).join("\\l")+"\\l}");
+            if_not_set(obj.instance_methods,'_dot_role',"{instance\\nmethods\\n|"+direct_methods(obj.instance_methods).join("\\l")+"\\l}");
+            return "subgraph cluster_"+new_cluster()+" {\n"+
+              "    graph [label="+obj.name+',bb="", bgcolor=lightgoldenrodyellow];\n'+
+              "    "+dot_node_name(obj)+"\n"+
+              "    "+dot_node_name(obj.instance_methods)+"\n"+
+              "  }"
+          } else {
+            return ''
+          }
+      }
+    function dot_properties_for(obj) {
+        var result = [];
+        if (obj.hasOwnProperty("_dot_role")) {
+            result.push('label="'+obj._dot_role+'"');
+          }
+        return dot_node_name(obj)+" ["+result.join(",")+"];"
+      }
+    var clusters = managed_objects.map(function (pair){
+        var child = pair[0],parent = pair[1];
+        return dot_subgraph_for(child) + dot_subgraph_for(parent)
+        })
+    var chains = managed_objects.map(function (pair){
+        var child = pair[0],parent = pair[1];
+        var flags = '';
+        if (child == object && parent == class.instance_methods) { flags = " [weight=2]"; }
+        return dot_node_name(child) + " -> " + dot_node_name(parent) + flags;
+        })
+    var properties = managed_objects.map(function (pair){
+        var child = pair[0],parent = pair[1];
+        return [dot_properties_for(child),dot_properties_for(parent)].join("\n    ")
+        })
+    return [
+        'digraph snooze {',
+        '    graph [ratio=fill, overlap=false, ranksep=1, bgcolor=gray85];',
+        '    node [label=N, fillcolor=white, shape=record, style=filled];',
+        '    edge [headport=nw, tailport=s, color=blue];',
+        "    "+clusters.join("\n    "),
+        "    "+chains.join("\n    "),
+        "    "+properties.join("\n    "),
+        '  }'
+      ].join("\n")
+  };
 
 console.log("class.new should not be the same as object.new",class.new != object.new && 'pass' || 'fail');
 console.log( class.life_story);
@@ -220,10 +298,7 @@ Number.prototype.to_link = function() { return "<a href='"+this.url()+"'>"+this+
 
 
 [String,Number,Array].map(function (cls) {
-    var x = chain(class)
-    x.life_story = cls.name;
-    x.instance_methods = cls;
-    class.new(cls.name.toLowerCase(),x);
+    class.new(cls.name.toLowerCase(),object,cls.prototype);
   });
 
 console.log(class.instances.map(function (c) { return c.name || "no name"; }));
@@ -241,7 +316,7 @@ Function.prototype.toString = function () { return "function"; };
 //
 //  Now start using it...
 //
-var enumeration = class.new('enumeration')
+var enumeration = class.new('enumeration',class)
 enumeration.instance_methods.initialize = function (name,values) {
     console.log('  enumeration.instance_methods.initialize');
     //this.super.instance_methods.initialize.apply(this,name);
@@ -254,11 +329,40 @@ enumeration.instance_methods.initialize = function (name,values) {
     console.log(this.name,this.instances);
     };
 
-var hue = enumeration.new('hue',['red','orange','yellow','green','blue','violet']);
+//var hue = enumeration.new('hue',['red','orange','yellow','green','blue','violet']);
 
 snooze.get('/', function(req, res){ res.redirect("/class") });
 
 snooze.listen(2222);
 console.log('Snooze started on port 2222');
-console.log('hue:',hue.life_story);
+// console.log('hue:',hue.life_story);
+var fs = require('fs');
+var sys = require('sys')
+var exec = require('child_process').exec;
+
+fs.writeFile("classes.dot", class_hierarchy_dot(), function(err) {
+    if (err) {
+        console.log(err);
+      } else {
+        exec("dot -o classes.png -T png classes.dot", function (error, stdout, stderr) {
+            if (err) {
+                console.log(err) 
+              } else {
+                snooze.get('/class_picture.png', function(req, res){
+                    fs.readFile('classes.png', "binary", function(err, contents) {  
+                        console.log(contents.length," bytes in classes.png");
+                        if (err) {  
+                            res.writeHead(500, {"Content-Type": "text/plain"});  
+                            res.write(err + "\n");  
+                          } else {    
+                            res.writeHead(200, {'Content-Type': 'image/png' });
+                            res.end(contents,"binary");
+                          }
+                      });
+                  });
+              }
+          });
+      }
+  }); 
+
 
