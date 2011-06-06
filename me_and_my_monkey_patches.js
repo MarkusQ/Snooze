@@ -15,3 +15,6 @@ Array.prototype.flatten = function () {
     return result;
   }
 
+Array.prototype.find_first = function (test) {
+    for (var i=0; i<this.length; i++) {if (test(this[i])) return this[i];} 
+  }

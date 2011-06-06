@@ -51,10 +51,15 @@ class_instance_methods.initialize = function (name,parent,instance_methods) {
     };
 class_instance_methods.bind_REST_class = function (name) { /* stub till we build REST */ };
 class_instance_methods.name = 'class';
-class_instance_methods.to_s = function () { return this.name };
+class_instance_methods.to_string = function () { return this.name };
 class_instance_methods.find =  function (id) {
-    console.log("Looking for",id,"in",this.name);
-    return this.instances[id] || this.instances.find_first(function (x) { return x.name == id; })
+    console.log("Looking for",arguments,"in",this.name);
+    var step = (id == '' && class) || this.instances[id] || this.instances.find_first(function (x) { return x.name == id; })
+    if (arguments.length == 1) {
+        return step
+      } else {
+        return step.find.apply(step,arguments.slice(1));
+      }
     };
 
 var object = chain(class_instance_methods,'ocm');

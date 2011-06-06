@@ -21,8 +21,8 @@ function form(obj,method,message,args) {
     }).join('')+"</form>"
 };
 
-function forms_for(methods) {
-    return methods().map(function (m) { return form(this,m['method']||'get',m['message'],m['args']||[])})
+function forms_for(target,methods) {
+    return methods().map(function (m) { return form(target,m['method']||'get',m['message'],m['args']||[])}).join("<br>\n")
     };
 
 //
@@ -30,12 +30,12 @@ function forms_for(methods) {
 //
 
 object.instance_methods.url      = function () { return "/"+this.class.name+"/"+this.id() };
-object.instance_methods.to_link  = function () { return "<a href="+this.url()+">"+this.to_s()+"</a>" };
+object.instance_methods.to_link  = function () { return "<a href="+this.url()+">"+this.to_string()+"</a>" };
 object.instance_methods.to_html  = function () { 
     return  [
-      '<h1>'+this.to_so()+'</h1>',
+      '<h1>'+this.to_string()+'</h1>',
       '<h2>Class</h2>'+this.class.to_link(),
-      (this.methods && ['<h2>Methods</h2>',forms_for(this.methods) ]),
+      (this.methods && ['<h2>Methods</h2>',forms_for(this,this.methods) ]),
       '<h2>Instances 1</h2>',
       (this.instances || "Too numerous to list").to_html()
       ].join('')
@@ -43,6 +43,7 @@ object.instance_methods.to_html  = function () {
 
 class.instance_methods.bind_REST_class = function (name) {
     var path = '/'+name;
+    var this_class = this;
     snooze.get(path, function(req,res) { res.redirect('/class/'+name); });
     snooze.get(path + '/:a..:b.:format?', function(req, res){
         obj.range(req, res, a, b, 
@@ -51,9 +52,20 @@ class.instance_methods.bind_REST_class = function (name) {
             'html' || req.params.format
             );
         });
-    console.log('Listening for: '+path+'/:id');
-    snooze.get(path + '/:id', this.bound_method('show'));
-    snooze.del(path + '/:id', this.bound_method('destroy'));
+    console.log('Listening for: '+path+'/:id and routing to '+this.class.name);
+    snooze.get(path + '/:id',          this.bound_method('show'));
+    snooze.del(path + '/:id',          this.bound_method('destroy'));
+    snooze.get(path + '/:id/:message', function(req,res) {
+         console.log("name = "+name);
+         console.log("this_class = "+this_class.name);
+         console.log("id = "+req.params.id);
+         var target = this_class.find(req.params.id);
+         console.log("target = "+target);
+         var result = target[req.params.message].apply(target);
+         console.log("result = "+result);
+         console.log("result.url = "+result.url());
+         res.redirect(result.url());
+       });
     };
 
 class.bind_REST_class('class');
@@ -92,13 +104,13 @@ class.instance_methods.range = function(req, res, a, b, format){
 class.instance_methods.url =  function () { return "/"+this.name };
 class.instance_methods.to_link =  function () { return "<a href='"+this.url()+"'>"+this.name+"</a>" };
 class.instance_methods.to_html = function () { return  [
-          '<h1>'+this.to_s()+'</h1>',
-          this.super && ('<h2>Superclass</h2>'+this.super.to_link()),
-          (this.methods && ['<h2>Methods</h2>', forms_for(this.methods) ]),
-          '<h2>Instances 3</h2>',
-          (this.instances || "Too numerous to list").to_html()
-        ].join('')
-      };
+      '<h1>'+this.to_string()+'</h1>',
+      this.super && ('<h2>Superclass</h2>'+this.super.to_link()),
+      (this.methods && ['<h2>Methods</h2>', forms_for(this,this.methods) ]),
+      '<h2>Instances 3</h2>',
+      (this.instances || "Too numerous to list").to_html()
+    ].join('')
+  };
 class.instance_methods.index = function (req, res){ res.send(this.to_html()); };
 
 
@@ -106,45 +118,60 @@ class.instance_methods.index = function (req, res){ res.send(this.to_html()); };
 //    Making native objects play too...
 //
 Object.prototype.url     = function() { return '' };
-Object.prototype.to_link = function() { return [this].join(' ') };
-Object.prototype.to_html = function() { return this.to_link() };
+Object.prototype.to_link = function() { return "<a href='"+this.url()+"'>"+this+"</a>" };
+Object.prototype.to_html = function() { return [
+      '<h1>'+this.to_link()+'</h1>',
+      this.class && ('<h2>Class</h2>'+this.class.to_link()),
+      (this.class.instance_methods.methods && ['<h2>Methods</h2>', forms_for(this,this.class.instance_methods.methods) ])
+    ].join('')
+  };
 Object.prototype.to_json = function() { return this };
 Object.prototype.to_format = function(format) {
     switch (format) {
-      case 'json':
-        return this.to_json();
-      case 'link':
-        return this.to_link();
-      case 'html':
-      default:
-        return this.to_html();
+      case 'json':   return this.to_json();
+      case 'link':   return this.to_link();
+      case 'html':   
+      default:       return this.to_html();
     }
   }
 Object.prototype.bind_REST_class = object.bind_REST_class;
-
-Array.prototype.to_html = function () { 
-    return "<ul>"+
-        this.map(function(item){ return '<li>'+((item && item.to_link && item.to_link()) || item || '<i>undefined</i>')+'</li>' ; }).join('\n') + 
-        '</ul>';
-};
-Array.prototype.find_first = function (test) {
-    for (var i=0; i<this.length; i++) {if (test(this[i])) return this[i];}
-    }
+Object.prototype.class = object;
 
 Number.prototype.url     = function() { return "/number/"+this };
-Number.prototype.to_link = function() { return "<a href='"+this.url()+"'>"+this+"</a>" };
 
+Array.prototype.url    = function () { return "/array/"+encodeURIComponent(this.map(function (x) { return x.url()}).join(',') ) };
+Array.prototype.to_link = function () { 
+    return "<ul>"+
+      this.map(function(item){ return '<li>'+((item && item.to_link && item.to_link()) || item || '<i>undefined</i>')+'</li>' ; }).join('\n') + 
+      '</ul>';
+  };
+
+String.prototype.url     = function () { return "/string/"+encodeURIComponent(this) };
 
 [String,Number,Array].map(function (cls) {
-    class.new(cls.name.toLowerCase(),object,cls.prototype);
+    var c = class.new(cls.name.toLowerCase(),object,cls.prototype);
+    Object.getOwnPropertyNames(c.instance_methods).map( function (x) {
+        if (/_/.test(x)) {
+            cls.prototype[x] = c.instance_methods[x];
+          }
+      });
+    cls.prototype.class = c;
   });
 
 console.log(class.instances.map(function (c) { return c.name || "no name"; }));
 class.find('number').find = parseFloat;
-
-class.find('string').find = String.toString;
+class.find('string').find = decodeURIComponent;
+class.find('array').find = function (x) {
+    return decodeURIComponent(x).
+      split(',').
+      map(function (el) {
+        var cls_id = el.split('/');
+        return class.find(cls_id[1]).find(cls_id[2]);
+      });
+  };
 
 Function.prototype.toString = function () { return "function"; };
+
 //
 //  Now start using it...
 //
