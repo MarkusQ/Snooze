@@ -14,6 +14,16 @@ function bound_method(object, method) {
   };
 }
 
+String.prototype.toUnderscore = function(){
+    return this.replace(/([A-Z])/g, function(ch) {return "_"+ch.toLowerCase();});
+  };
+
+Array.prototype.flatten = function () {
+    var result = [];
+    this.map( function (x) { if (typeof x == "object" && "flatten" in x) { result = result.concat(x.flatten()) } else { result.push(x) } } )
+    return result;
+  }
+
 //
 //    HTML support
 //
@@ -24,14 +34,14 @@ function form(obj,method,message,args) {
 };
 
 function forms_for(methods) {
-    return methods.map(function (m) { form(this,m['method']||'get',m['message'],m['args']||[])})
+    return methods().map(function (m) { return form(this,m['method']||'get',m['message'],m['args']||[])})
     };
 
 
 //
 //     Ruby-style class based object system
 //
-var managed_objects = [];
+var known_classes = [];
 
 function chain(parent,tag) {
     //console.log('parent is ',parent);
@@ -40,7 +50,7 @@ function chain(parent,tag) {
     var result = new f();
     result.super = parent;
     result.life_story = tag + ' ' + parent.life_story; //(parent && parent.life_story || '!!!');
-    managed_objects.push([result,parent]);
+    known_classes.push([result,parent]);
     return result;
     };
 
@@ -58,7 +68,7 @@ var object_instance_methods = {
     initialize: function (/*arguments*/) { console.log('  object.instance_methods.initialize'); },
     methods: function () {
         var result = [];
-        for (x in this) { result.push(x); }
+        for (x in this) { result.push({ message: x }); }
         return result;
       },
     };
@@ -67,13 +77,14 @@ var object_instance_methods = {
 var class_instance_methods = chain(object_instance_methods,'cim');
 
 class_instance_methods.initialize = function (name,parent,instance_methods) {
-    console.log(' ',name,'class.instance_methods.initialize');
     //this.super.initialize.apply(this);
     //if (!this.instance_methods) this.instance_methods = chain(this.super.instance_methods,'??'); 
-    for (x in instance_methods) { 
-         console.log('    copying '+x+' into '+name+'.instance_methods');
-         this.instance_methods[x] = instance_methods[x];
-         }
+    if (instance_methods) {
+        var self = this;
+        Object.getOwnPropertyNames(instance_methods).map(function (x) {
+            self.instance_methods[x.toUnderscore()] = instance_methods[x];
+          });
+      }
     this.name = name;
     class.instances.push(this);
     this.bind_REST_class(name);
@@ -110,77 +121,6 @@ class.initialize('class');
 
 Object.prototype.life_story = "JSObj";
 
-function class_hierarchy_dot() {
-    function auto_inc(prefix) {
-        var count = 0;
-        return function () {
-            count += 1;
-            return prefix+"_"+count;
-          }
-        }
-    var new_node    = auto_inc('node'), 
-        new_cluster = auto_inc('cluster');
-    function if_not_set(obj,prop,val) {
-        if (!obj.hasOwnProperty(prop)) {
-            if (typeof val == 'function') { val = val(); }
-            obj[prop] = val;
-          }
-        }
-    function dot_node_name(obj) {
-        if_not_set(obj,"_dot_node_name",new_node);
-        return obj._dot_node_name;
-      }
-    function direct_methods(obj) {
-        var result = [];
-        for (x in obj) { if (obj.hasOwnProperty(x)) { result.push(x); } }
-        return result;
-      }
-    function dot_subgraph_for(obj) {
-        if (obj.hasOwnProperty('instance_methods') && !obj.hasOwnProperty('_dot_subgraph')) {
-            obj._dot_subgraph = true;
-            if_not_set(obj,                 '_dot_role',"{class\\nmethods\\n|"+direct_methods(obj).join("\\l")+"\\l}");
-            if_not_set(obj.instance_methods,'_dot_role',"{instance\\nmethods\\n|"+direct_methods(obj.instance_methods).join("\\l")+"\\l}");
-            return "subgraph cluster_"+new_cluster()+" {\n"+
-              "    graph [label="+obj.name+',bb="", bgcolor=lightgoldenrodyellow];\n'+
-              "    "+dot_node_name(obj)+"\n"+
-              "    "+dot_node_name(obj.instance_methods)+"\n"+
-              "  }"
-          } else {
-            return ''
-          }
-      }
-    function dot_properties_for(obj) {
-        var result = [];
-        if (obj.hasOwnProperty("_dot_role")) {
-            result.push('label="'+obj._dot_role+'"');
-          }
-        return dot_node_name(obj)+" ["+result.join(",")+"];"
-      }
-    var clusters = managed_objects.map(function (pair){
-        var child = pair[0],parent = pair[1];
-        return dot_subgraph_for(child) + dot_subgraph_for(parent)
-        })
-    var chains = managed_objects.map(function (pair){
-        var child = pair[0],parent = pair[1];
-        var flags = '';
-        if (child == object && parent == class.instance_methods) { flags = " [weight=2]"; }
-        return dot_node_name(child) + " -> " + dot_node_name(parent) + flags;
-        })
-    var properties = managed_objects.map(function (pair){
-        var child = pair[0],parent = pair[1];
-        return [dot_properties_for(child),dot_properties_for(parent)].join("\n    ")
-        })
-    return [
-        'digraph snooze {',
-        '    graph [ratio=fill, overlap=false, ranksep=1, bgcolor=gray85];',
-        '    node [label=N, fillcolor=white, shape=record, style=filled];',
-        '    edge [headport=nw, tailport=s, color=blue];',
-        "    "+clusters.join("\n    "),
-        "    "+chains.join("\n    "),
-        "    "+properties.join("\n    "),
-        '  }'
-      ].join("\n")
-  };
 
 console.log("class.new should not be the same as object.new",class.new != object.new && 'pass' || 'fail');
 console.log( class.life_story);
@@ -303,14 +243,8 @@ Number.prototype.to_link = function() { return "<a href='"+this.url()+"'>"+this+
 
 console.log(class.instances.map(function (c) { return c.name || "no name"; }));
 class.find('number').find = parseFloat;
-class.find('number').methods = [
-  { message: 'abs' }
-]
 
 class.find('string').find = String.toString;
-class.find('array').methods = [
-  { message: 'length' }
-]
 
 Function.prototype.toString = function () { return "function"; };
 //
@@ -336,33 +270,20 @@ snooze.get('/', function(req, res){ res.redirect("/class") });
 snooze.listen(2222);
 console.log('Snooze started on port 2222');
 // console.log('hue:',hue.life_story);
-var fs = require('fs');
-var sys = require('sys')
-var exec = require('child_process').exec;
 
-fs.writeFile("classes.dot", class_hierarchy_dot(), function(err) {
-    if (err) {
-        console.log(err);
-      } else {
-        exec("dot -o classes.png -T png classes.dot", function (error, stdout, stderr) {
-            if (err) {
-                console.log(err) 
-              } else {
-                snooze.get('/class_picture.png', function(req, res){
-                    fs.readFile('classes.png', "binary", function(err, contents) {  
-                        console.log(contents.length," bytes in classes.png");
-                        if (err) {  
-                            res.writeHead(500, {"Content-Type": "text/plain"});  
-                            res.write(err + "\n");  
-                          } else {    
-                            res.writeHead(200, {'Content-Type': 'image/png' });
-                            res.end(contents,"binary");
-                          }
-                      });
-                  });
+var fs = require('fs');
+require('./graphviz_class_hierarchy').draw_class_hierarchy("classes","png",known_classes, function () {
+    snooze.get('/class_picture.png', function(req, res){
+        fs.readFile('classes.png', "binary", function(err, contents) {  
+            console.log(contents.length," bytes in classes.png");
+            if (err) {  
+                res.writeHead(500, {"Content-Type": "text/plain"});  
+                res.write(err + "\n");  
+              } else {    
+                res.writeHead(200, {'Content-Type': 'image/png' });
+                res.end(contents,"binary");
               }
           });
-      }
-  }); 
-
+      });
+    });
 
