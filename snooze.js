@@ -16,14 +16,24 @@ var snooze     = express.createServer();
 //    HTML support
 //
 function form(obj,method,message,args) {
-  return "<form action='"+obj.url()+'/'+message+"' method='"+method+"'><input type=submit value="+message+">"+args.map(function (arg) { 
+  return "<div class='method'><form action='"+obj.url()+'/'+message+"' method='"+method+"'><input type=submit value="+message+">"+args.map(function (arg) { 
     return "<lable for='"+arg+"'>"+arg+": </label> <input type='text' id='"+arg+"'>"
-    }).join('')+"</form>"
+    }).join('')+"</form></div>"
 };
 
 function forms_for(target,methods) {
-    return methods().map(function (m) { return form(target,m['method']||'get',m['message'],m['args']||[])}).join("<br>\n")
+    return methods.map(function (m) { return form(target,m['method']||'get',m['message'],m['args']||[])}).join("\n")
     };
+
+var css = ["<style>",
+    "div.method {",
+    "    display: block;",
+    "    float: left;",
+    "    border: 2px black dotted;",
+    "    background-color:#b0c4de;",
+    "    margin: 10px;",
+    "  }",
+    "</style>"].join("\n")
 
 //
 //     Rest operations
@@ -35,7 +45,7 @@ object.instance_methods.to_html  = function () {
     return  [
       '<h1>'+this.to_string()+'</h1>',
       '<h2>Class</h2>'+this.class.to_link(),
-      (this.methods && ['<h2>Methods</h2>',forms_for(this,this.methods) ]),
+      (this.methods && '<h2>Methods</h2>\n'+forms_for(this,this.methods())),
       '<h2>Instances 1</h2>',
       (this.instances || "Too numerous to list").to_html()
       ].join('')
@@ -61,7 +71,8 @@ class.instance_methods.bind_REST_class = function (name) {
          console.log("id = "+req.params.id);
          var target = this_class.find(req.params.id);
          console.log("target = "+target);
-         var result = target[req.params.message].apply(target);
+         var result = target[req.params.message];
+         if (typeof(result) == 'function') result = result.apply(target);
          console.log("result = "+result);
          console.log("result.url = "+result.url());
          res.redirect(result.url());
@@ -86,10 +97,10 @@ class.instance_methods.show = function(req, res) {
 //    res.send(this.find(req.params.id).to_html());
 //    res.send((this.find(req.params.id) || ('Cannot find '+this.name+'/'+req.params.id)).to_html()+' in '+this.instances.map(function (x) { return util.inspect(x)}).to_html());
 //    console.log(util.inspect(this.find(req.params.id)));
-    res.send((this.find(req.params.id) || (('Cannot find '+this.name+'/'+req.params.id)).to_html()+' in '+
+    res.send(css+((this.find(req.params.id) || (('Cannot find '+this.name+'/'+req.params.id)).to_html()+' in '+
       this.instances.map(
         function (x) { return "<b>"+(x.name || "<i>no name</i>")+"</b>"+util.inspect(x)}
-      )).to_html()  
+      )).to_html() ) 
     );
   };
 class.instance_methods.destroy = function(req, res){
@@ -106,7 +117,7 @@ class.instance_methods.to_link =  function () { return "<a href='"+this.url()+"'
 class.instance_methods.to_html = function () { return  [
       '<h1>'+this.to_string()+'</h1>',
       this.super && ('<h2>Superclass</h2>'+this.super.to_link()),
-      (this.methods && ['<h2>Methods</h2>', forms_for(this,this.methods) ]),
+      (this.methods && ('<h2>Methods</h2>\n'+forms_for(this,this.methods()))),
       '<h2>Instances 3</h2>',
       (this.instances || "Too numerous to list").to_html()
     ].join('')
@@ -122,7 +133,7 @@ Object.prototype.to_link = function() { return "<a href='"+this.url()+"'>"+this+
 Object.prototype.to_html = function() { return [
       '<h1>'+this.to_link()+'</h1>',
       this.class && ('<h2>Class</h2>'+this.class.to_link()),
-      (this.class.instance_methods.methods && ['<h2>Methods</h2>', forms_for(this,this.class.instance_methods.methods) ])
+      (this.class.instance_methods.methods && ('<h2>Methods</h2>\n'+forms_for(this,this.class.instance_methods.methods())))
     ].join('')
   };
 Object.prototype.to_json = function() { return this };
@@ -151,7 +162,7 @@ String.prototype.url     = function () { return "/string/"+encodeURIComponent(th
 [String,Number,Array].map(function (cls) {
     var c = class.new(cls.name.toLowerCase(),object,cls.prototype);
     Object.getOwnPropertyNames(c.instance_methods).map( function (x) {
-        if (/_/.test(x)) {
+        if (!/^_/.test(x)) {
             cls.prototype[x] = c.instance_methods[x];
           }
       });

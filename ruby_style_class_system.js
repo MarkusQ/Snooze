@@ -28,7 +28,12 @@ var object_instance_methods = {
     initialize: function (/*arguments*/) { console.log('  object.instance_methods.initialize'); },
     methods: function () {
         var result = [];
-        for (x in this) { result.push({ message: x }); }
+        console.log(this.name+" has methods: "+Object.getOwnPropertyNames(this).join(", "));
+        Object.getOwnPropertyNames(this).map(function (x) {
+            if (!/^_/.test(x)) {
+                result.push({ message: x });
+              }
+          });
         return result;
       },
     };
