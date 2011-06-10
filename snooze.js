@@ -11,7 +11,17 @@ var express    = require('../../node/node_modules/express')
 var ruby_style = require('./ruby_style_class_system.js')
 var class      = ruby_style.class
 var object     = ruby_style.object
+
+
 var snooze     = express.createServer();
+snooze.use(express.bodyParser());
+    
+// The methodOverride middleware allows us
+// to set a hidden input of _method to an arbitrary
+// HTTP method to support app.put(), app.del() etc
+//snooze.use(express.methodOverride());
+//snooze.use(express.cookieParser());
+//snooze.use(express.session({ secret: "it's raining, it's pooring" }));
 
 //
 // Function introspection
@@ -85,7 +95,7 @@ function form(method,url,fields) { return "<form action='"+url+"' method='"+meth
 function message_form(obj,method,message,args) {
     return div("method "+method+"_method",form(method,obj.url()+'/'+message,[
         "<input type=submit value="+message+">",
-        args.map(function (arg) { return "<lable for='"+arg+"'>"+arg+": </label> <input type='text' id='"+arg+"'>"})
+        args.map(function (arg) { return "<lable for='"+arg+"'>"+arg+": </label> <input type='text' name='"+arg+"'>"})
       ]))
   };
 
@@ -153,7 +163,7 @@ class.instance_methods.bind_REST_class = function (name) {
          var target = this_class.find(req.params.id);
          var result = target[req.params.message];
          var args = [];
-         for (arg in req.query) args.push(req.query[arg]);
+         for (arg in req.body) if (req.body.hasOwnProperty(arg)) args.push(req.body[arg]);
          result = result.apply(target,args);
          res.redirect(result.url());
        });
