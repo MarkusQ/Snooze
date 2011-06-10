@@ -37,8 +37,10 @@ function class_hierarchy_dot(known_classes) {
     function dot_subgraph_for(obj) {
         if (obj.hasOwnProperty('instance_methods') && !obj.hasOwnProperty('_dot_subgraph')) {
             obj._dot_subgraph = true;
-            if_not_set(obj,                 '_dot_role',"{class\\nmethods\\n|"+direct_methods(obj).join("\\l")+"\\l}");
-            if_not_set(obj.instance_methods,'_dot_role',"{instance\\nmethods\\n|"+direct_methods(obj.instance_methods).join("\\l")+"\\l}");
+            ///if_not_set(obj,                 '_dot_role',"{class\\nmethods\\n|"+direct_methods(obj).join("\\l")+"\\l}");
+            ///if_not_set(obj.instance_methods,'_dot_role',"{instance\\nmethods\\n|"+direct_methods(obj.instance_methods).join("\\l")+"\\l}");
+            if_not_set(obj,                 '_dot_role',"class"   );
+            if_not_set(obj.instance_methods,'_dot_role',"instance");
             return "subgraph cluster_"+new_cluster()+" {\n"+
               "    graph [label="+obj.name+',bb="", bgcolor=lightgoldenrodyellow];\n'+
               "    "+dot_node_name(obj)+"\n"+
@@ -51,7 +53,7 @@ function class_hierarchy_dot(known_classes) {
     function dot_properties_for(obj) {
         var result = [];
         if (obj.hasOwnProperty("_dot_role")) {
-            result.push('label="'+obj._dot_role+'"');
+            result.push('label="{'+obj._dot_role+'\\nmethods\\n|'+direct_methods(obj).join("\\l")+'\\l}"');
           }
         return dot_node_name(obj)+" ["+result.join(",")+"]"
       }

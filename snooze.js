@@ -5,33 +5,117 @@ require('./me_and_my_monkey_patches');
 var http       = require('http');
 var util       = require('util');
 var url        = require('url');
+var fs         = require('fs');
+var querystring = require('querystring');
 var express    = require('../../node/node_modules/express')
 var ruby_style = require('./ruby_style_class_system.js')
 var class      = ruby_style.class
 var object     = ruby_style.object
-var fs         = require('fs');
 var snooze     = express.createServer();
 
 //
+// Function introspection
+//
+Function.prototype.signature = function () {
+    if (this._signature) return this._signature;
+    var signature = [];
+    if (this.arity)
+        for (var i = 0; i < this.arity(); i++) signature.push('');
+    return signature;
+  } 
+String.prototype.split._signature = ['delimiter'];
+
+Object.prototype.known_methods  = function () {
+    var self = this;
+    var result = [];
+    //console.log(this.class.name+" has methods: "+Object.getOwnPropertyNames(this).join(", "));
+    Object.getOwnPropertyNames(this).map(function (x) {
+        if (!/^_/.test(x)) {
+            if (typeof self[x] == "function") {
+                result.push({ message: x, method: "post", args: self[x].signature() });
+              } else {
+                result.push({ message: x, method: "get" });
+              }
+          }
+      });
+    if (this.super) {
+        return [{source:this, methods:result}].concat(this.super.known_methods());
+        var result = this.super.known_methods();
+        result.push({source:this, methods:result});
+        return result;
+      } else
+        return [{source:this, methods:result}];
+   };
+
+//
+// Add some more classes
+//
+var set_by_initialize = 'Should have been set when this object was initialized.';
+
+var help = class.new('help',object);
+
+var status = class.new('status',object,{ //);
+    initialize: function (code,name,description) {
+        //console.log("status#initialize("+code+",'"+name+"',description("+(description||'').length+")");
+        //this.super.initialize.apply(this);
+        this.code = code;
+        this.name = name;
+        this.description = description;
+      },
+    code: set_by_initialize,
+    name: set_by_initialize,
+    description: set_by_initialize
+  });
+
+fs.readFile('./statuses.zzd', 'utf8', function (err, data) {
+    if (err) throw err;
+    data.split('STATUS').map(function (s) {
+         var parsed = / *([\d_]+): *(.*)([^]*)/.exec(s);
+         if (parsed) {
+             status.new(parsed[1],parsed[2],parsed[3]);
+           }
+      });
+  });
+//
 //    HTML support
 //
-function form(obj,method,message,args) {
-  return "<div class='method'><form action='"+obj.url()+'/'+message+"' method='"+method+"'><input type=submit value="+message+">"+args.map(function (arg) { 
-    return "<lable for='"+arg+"'>"+arg+": </label> <input type='text' id='"+arg+"'>"
-    }).join('')+"</form></div>"
-};
+function div(class,contents) { return "<div class='"+class+"'>"+contents+"</div>"; }
+function form(method,url,fields) { return "<form action='"+url+"' method='"+method+"'>"+fields.flatten().join('\n')+"</form>"; }
+
+function message_form(obj,method,message,args) {
+    return div("method "+method+"_method",form(method,obj.url()+'/'+message,[
+        "<input type=submit value="+message+">",
+        args.map(function (arg) { return "<lable for='"+arg+"'>"+arg+": </label> <input type='text' id='"+arg+"'>"})
+      ]))
+  };
 
 function forms_for(target,methods) {
-    return methods.map(function (m) { return form(target,m['method']||'get',m['message'],m['args']||[])}).join("\n")
-    };
+    return methods.map(function (layer) {
+        var cls = layer['source'];
+        if (cls._dot_role == 'instance') cls = cls.class;
+        return div('section','<h3>'+cls.to_link()+' ('+layer['source']._dot_role+' methods)</h3>'+
+            layer['methods'].map(function (m) {
+                return message_form(target,m['method']||'get',m['message'],m['args']||[])
+              }).join("\n"))
+      }).join("\n")
+  };
 
 var css = ["<style>",
+    "div.section {",
+    "    display: block;",
+    "    clear: left;",
+    "  }",
     "div.method {",
     "    display: block;",
     "    float: left;",
     "    border: 2px black dotted;",
-    "    background-color:#b0c4de;",
     "    margin: 10px;",
+    "  }",
+    "div.get_method {",
+    "    background-color:#b0c4de;",
+    "  }",
+    "div.post_method {",
+    "    background-color:#ffa5b0;",
     "  }",
     "</style>"].join("\n")
 
@@ -40,14 +124,16 @@ var css = ["<style>",
 //
 
 object.instance_methods.url      = function () { return "/"+this.class.name+"/"+this.id() };
-object.instance_methods.to_link  = function () { return "<a href="+this.url()+">"+this.to_string()+"</a>" };
+object.instance_methods.id       = function () { return this.toString() };
+object.instance_methods.to_link  = function () { return "<a href="+this.url()+">"+this.toString()+"</a>" };
 object.instance_methods.to_html  = function () { 
     return  [
       '<h1>'+this.to_string()+'</h1>',
       '<h2>Class</h2>'+this.class.to_link(),
-      (this.methods && '<h2>Methods</h2>\n'+forms_for(this,this.methods())),
-      '<h2>Instances 1</h2>',
-      (this.instances || "Too numerous to list").to_html()
+      (this.known_methods && '<div><h2>Methods</h2>\n'+forms_for(this,this.known_methods())+'</div>'),
+      '<div><h2>Instances 1</h2>',
+      (this.instances || "Too numerous to list").to_link(),
+      '</div>'
       ].join('')
     };
 
@@ -55,26 +141,20 @@ class.instance_methods.bind_REST_class = function (name) {
     var path = '/'+name;
     var this_class = this;
     snooze.get(path, function(req,res) { res.redirect('/class/'+name); });
-    snooze.get(path + '/:a..:b.:format?', function(req, res){
-        obj.range(req, res, a, b, 
-            parseInt(req.params.a, 10),
-            parseInt(req.params.b, 10),
-            'html' || req.params.format
-            );
-        });
     console.log('Listening for: '+path+'/:id and routing to '+this.class.name);
     snooze.get(path + '/:id',          this.bound_method('show'));
     snooze.del(path + '/:id',          this.bound_method('destroy'));
     snooze.get(path + '/:id/:message', function(req,res) {
-         console.log("name = "+name);
-         console.log("this_class = "+this_class.name);
-         console.log("id = "+req.params.id);
          var target = this_class.find(req.params.id);
-         console.log("target = "+target);
          var result = target[req.params.message];
-         if (typeof(result) == 'function') result = result.apply(target);
-         console.log("result = "+result);
-         console.log("result.url = "+result.url());
+         res.redirect(result.url());
+       });
+    snooze.post(path + '/:id/:message', function(req,res) {
+         var target = this_class.find(req.params.id);
+         var result = target[req.params.message];
+         var args = [];
+         for (arg in req.query) args.push(req.query[arg]);
+         result = result.apply(target,args);
          res.redirect(result.url());
        });
     };
@@ -86,7 +166,7 @@ class.instance_methods.to_html = function () {
     return [
       '<h1>'+this.name+'</h1>',
       this.super && ('<h2>Superclass</h2>'+this.super.to_link()),
-      (this.methods && ['<h2>Methods</h2>' + this.methods.map(function (m) { form(this,m['method']||'get',m['message'],m['args']||[])}).join('') ]) || '',
+      (this.known_methods && ['<h2>Methods</h2>' + this.known_methods.map(function (m) { message_form(this,m['method']||'get',m['message'],m['args']||[])}).join('') ]) || '',
       '<h2>Instances 2</h2>',
       (this.instances || "Too numerous to list").to_html()
     ].join('')
@@ -94,14 +174,14 @@ class.instance_methods.to_html = function () {
 
 
 class.instance_methods.show = function(req, res) {
-//    res.send(this.find(req.params.id).to_html());
-//    res.send((this.find(req.params.id) || ('Cannot find '+this.name+'/'+req.params.id)).to_html()+' in '+this.instances.map(function (x) { return util.inspect(x)}).to_html());
-//    console.log(util.inspect(this.find(req.params.id)));
-    res.send(css+((this.find(req.params.id) || (('Cannot find '+this.name+'/'+req.params.id)).to_html()+' in '+
-      this.instances.map(
-        function (x) { return "<b>"+(x.name || "<i>no name</i>")+"</b>"+util.inspect(x)}
-      )).to_html() ) 
-    );
+    var obj = this.find(req.params.id);
+    if (obj)
+        res.send(css+obj.to_html())
+      else {
+        res.writeHeader(300,this.name + " does not have a '"+req.params.id+'"');
+        res.write(this.name + " does not have a '"+req.params.id+'"');
+        res.end();
+      }
   };
 class.instance_methods.destroy = function(req, res){
     var id = req.params.id;
@@ -109,17 +189,15 @@ class.instance_methods.destroy = function(req, res){
     delete this.instances[id];
     res.send(destroyed ? 'destroyed' : ('Cannot find '+name+'/'+id) );
   };
-class.instance_methods.range = function(req, res, a, b, format){
-    res.send(this.instances.slice(a, b + 1).to_format(format));
-  };
 class.instance_methods.url =  function () { return "/"+this.name };
 class.instance_methods.to_link =  function () { return "<a href='"+this.url()+"'>"+this.name+"</a>" };
 class.instance_methods.to_html = function () { return  [
       '<h1>'+this.to_string()+'</h1>',
       this.super && ('<h2>Superclass</h2>'+this.super.to_link()),
-      (this.methods && ('<h2>Methods</h2>\n'+forms_for(this,this.methods()))),
-      '<h2>Instances 3</h2>',
-      (this.instances || "Too numerous to list").to_html()
+      (this.known_methods && ('<div class=section><h2>Methods</h2>\n'+forms_for(this,this.known_methods()))+'</div>'),
+      '<div class=section><h2>Instances 3</h2>',
+      (this.instances && this.instances.to_html() || "Too numerous to list".italics()),
+      '</div>'
     ].join('')
   };
 class.instance_methods.index = function (req, res){ res.send(this.to_html()); };
@@ -133,7 +211,7 @@ Object.prototype.to_link = function() { return "<a href='"+this.url()+"'>"+this+
 Object.prototype.to_html = function() { return [
       '<h1>'+this.to_link()+'</h1>',
       this.class && ('<h2>Class</h2>'+this.class.to_link()),
-      (this.class.instance_methods.methods && ('<h2>Methods</h2>\n'+forms_for(this,this.class.instance_methods.methods())))
+      (this.class.instance_methods.known_methods && ('<h2>Methods</h2>\n'+forms_for(this,this.class.instance_methods.known_methods())))
     ].join('')
   };
 Object.prototype.to_json = function() { return this };
@@ -148,10 +226,10 @@ Object.prototype.to_format = function(format) {
 Object.prototype.bind_REST_class = object.bind_REST_class;
 Object.prototype.class = object;
 
-Number.prototype.url     = function() { return "/number/"+this };
+Number.prototype.url       = function () { return "/number/"+this };
 
-Array.prototype.url    = function () { return "/array/"+encodeURIComponent(this.map(function (x) { return x.url()}).join(',') ) };
-Array.prototype.to_link = function () { 
+Array.prototype.url      = function () { return "/array/"+encodeURIComponent(this.map(function (x) { return x.url()}).join(',') ) };
+Array.prototype.to_link  = function () { 
     return "<ul>"+
       this.map(function(item){ return '<li>'+((item && item.to_link && item.to_link()) || item || '<i>undefined</i>')+'</li>' ; }).join('\n') + 
       '</ul>';
@@ -170,8 +248,12 @@ String.prototype.url     = function () { return "/string/"+encodeURIComponent(th
   });
 
 console.log(class.instances.map(function (c) { return c.name || "no name"; }));
+
 class.find('number').find = parseFloat;
+class.find('number').instance_methods.to_string = function () { return this.toString() };
+
 class.find('string').find = decodeURIComponent;
+
 class.find('array').find = function (x) {
     return decodeURIComponent(x).
       split(',').
@@ -205,7 +287,6 @@ snooze.get('/', function(req, res){ res.redirect("/class") });
 
 snooze.listen(2222);
 console.log('Snooze started on port 2222');
-// console.log('hue:',hue.life_story);
 
 require('./graphviz_class_hierarchy').draw_class_hierarchy("classes","png",ruby_style.known_classes, function () {
     snooze.get('/class_picture.png', function(req, res){

@@ -1,0 +1,97 @@
+digraph snooze {
+    graph [ratio=fill, overlap=false, ranksep=1, bgcolor=gray85]
+    node [label=N, fillcolor=white, shape=record, style=filled]
+    edge [headport=nw, tailport=s, color=blue]
+    
+    subgraph cluster_cluster_1 {
+    graph [label=object,bb="", bgcolor=lightgoldenrodyellow];
+    node_1
+    node_2
+  }
+    subgraph cluster_cluster_2 {
+    graph [label=class,bb="", bgcolor=lightgoldenrodyellow];
+    node_3
+    node_4
+  }
+    subgraph cluster_cluster_3 {
+    graph [label=help,bb="", bgcolor=lightgoldenrodyellow];
+    node_5
+    node_6
+  }
+    
+    subgraph cluster_cluster_4 {
+    graph [label=status,bb="", bgcolor=lightgoldenrodyellow];
+    node_7
+    node_8
+  }
+    
+    subgraph cluster_cluster_5 {
+    graph [label=string,bb="", bgcolor=lightgoldenrodyellow];
+    node_9
+    node_10
+  }
+    
+    subgraph cluster_cluster_6 {
+    graph [label=number,bb="", bgcolor=lightgoldenrodyellow];
+    node_11
+    node_12
+  }
+    
+    subgraph cluster_cluster_7 {
+    graph [label=array,bb="", bgcolor=lightgoldenrodyellow];
+    node_13
+    node_14
+  }
+    
+    subgraph cluster_cluster_8 {
+    graph [label=enumeration,bb="", bgcolor=lightgoldenrodyellow];
+    node_15
+    node_16
+  }
+    
+    node_4 -> node_2
+    node_1 -> node_4 [weight=2]
+    node_3 -> node_1
+    node_5 -> node_1
+    node_6 -> node_2
+    node_7 -> node_1
+    node_8 -> node_2
+    node_9 -> node_1
+    node_10 -> node_2
+    node_11 -> node_1
+    node_12 -> node_2
+    node_13 -> node_1
+    node_14 -> node_2
+    node_15 -> node_3
+    node_16 -> node_4
+    node_4 [label="{instance\nmethods\n|to_string\lnew\lindex\lto_link\linitialize\lfind\lsuper\lto_html\lclass\ldestroy\lbind_REST_class\llife_story\lurl\lshow\l}"]
+    node_2 [label="{instance\nmethods\n|to_link\linitialize\lid\lto_html\lclass\llife_story\lurl\l}"]
+    node_1 [label="{class\nmethods\n|instance_methods\lsuper\lname\llife_story\l}"]
+    node_4 [label="{instance\nmethods\n|to_string\lnew\lindex\lto_link\linitialize\lfind\lsuper\lto_html\lclass\ldestroy\lbind_REST_class\llife_story\lurl\lshow\l}"]
+    node_3 [label="{class\nmethods\n|new\linstance_methods\linstances\lsuper\lname\llife_story\l}"]
+    node_1 [label="{class\nmethods\n|instance_methods\lsuper\lname\llife_story\l}"]
+    node_5 [label="{class\nmethods\n|instance_methods\lsuper\lname\llife_story\l}"]
+    node_1 [label="{class\nmethods\n|instance_methods\lsuper\lname\llife_story\l}"]
+    node_6 [label="{instance\nmethods\n|super\lclass\llife_story\l}"]
+    node_2 [label="{instance\nmethods\n|to_link\linitialize\lid\lto_html\lclass\llife_story\lurl\l}"]
+    node_7 [label="{class\nmethods\n|instance_methods\lsuper\lname\llife_story\l}"]
+    node_1 [label="{class\nmethods\n|instance_methods\lsuper\lname\llife_story\l}"]
+    node_8 [label="{instance\nmethods\n|description\linitialize\lsuper\lclass\lname\lcode\llife_story\l}"]
+    node_2 [label="{instance\nmethods\n|to_link\linitialize\lid\lto_html\lclass\llife_story\lurl\l}"]
+    node_9 [label="{class\nmethods\n|instance_methods\lfind\lsuper\lname\llife_story\l}"]
+    node_1 [label="{class\nmethods\n|instance_methods\lsuper\lname\llife_story\l}"]
+    node_10 [label="{instance\nmethods\n|concat\lto_string\lsubstring\lto_locale_upper_case\litalics\ltrim_left\lstrike\lreplace\llocale_compare\lto_underscore\lto_upper_case\lchar_at\lfontsize\ltrim\llength\lsplit\lsubstr\lvalue_of\lto_locale_lower_case\lsub\lsuper\lindex_of\ltrim_right\lblink\lto_lower_case\lclass\llast_index_of\lsup\lfontcolor\llink\lchar_code_at\lbold\lanchor\llife_story\lconstructor\lsmall\lsearch\lfixed\lbig\lurl\lmatch\lslice\l}"]
+    node_2 [label="{instance\nmethods\n|to_link\linitialize\lid\lto_html\lclass\llife_story\lurl\l}"]
+    node_11 [label="{class\nmethods\n|instance_methods\lfind\lsuper\lname\llife_story\l}"]
+    node_1 [label="{class\nmethods\n|instance_methods\lsuper\lname\llife_story\l}"]
+    node_12 [label="{instance\nmethods\n|to_string\lto_precision\lvalue_of\lsuper\lto_fixed\lclass\lto_locale_string\llife_story\lto_exponential\lconstructor\lurl\l}"]
+    node_2 [label="{instance\nmethods\n|to_link\linitialize\lid\lto_html\lclass\llife_story\lurl\l}"]
+    node_13 [label="{class\nmethods\n|instance_methods\lfind\lsuper\lname\llife_story\l}"]
+    node_1 [label="{class\nmethods\n|instance_methods\lsuper\lname\llife_story\l}"]
+    node_14 [label="{instance\nmethods\n|concat\lto_string\lmap\lsort\ljoin\lreduce_right\lfilter\lsome\lsplice\lshift\llength\lto_link\lsuper\lindex_of\lclass\lunshift\llast_index_of\lflatten\lto_locale_string\lreverse\lreduce\lpop\lfor_each\lpush\llife_story\lconstructor\levery\lurl\lslice\lfind_first\l}"]
+    node_2 [label="{instance\nmethods\n|to_link\linitialize\lid\lto_html\lclass\llife_story\lurl\l}"]
+    node_15 [label="{class\nmethods\n|instance_methods\lsuper\lname\llife_story\l}"]
+    node_3 [label="{class\nmethods\n|new\linstance_methods\linstances\lsuper\lname\llife_story\l}"]
+    node_16 [label="{instance\nmethods\n|initialize\lsuper\lclass\llife_story\l}"]
+    node_4 [label="{instance\nmethods\n|to_string\lnew\lindex\lto_link\linitialize\lfind\lsuper\lto_html\lclass\ldestroy\lbind_REST_class\llife_story\lurl\lshow\l}"]
+  }
