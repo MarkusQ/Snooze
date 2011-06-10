@@ -30,10 +30,28 @@ Function.prototype.signature = function () {
     if (this._signature) return this._signature;
     var signature = [];
     if (this.arity)
-        for (var i = 0; i < this.arity(); i++) signature.push('');
+        for (var i = 0; i < this.arity(); i++) signature.push('_'+signature.length);
     return signature;
   } 
 String.prototype.split._signature = ['delimiter'];
+
+Array.prototype.join._signature = ['delimiter'];
+Array.prototype.push._signature = ['items'];
+Array.prototype.slice._signature = ['from','to'];
+Array.prototype.splice._signature = ['from','count','replace with'];
+Array.prototype.unshift._signature = ['items'];
+
+//Boolean
+
+//Date
+
+//Number
+Number.prototype.add = function (x) { console.log(util.inspect(this),'+',util.inspect(x)); return this+x; }
+Number.prototype.add._signature = ['_0'];
+
+//RegExp
+
+//String
 
 Object.prototype.known_methods  = function () {
     var self = this;
@@ -95,7 +113,11 @@ function form(method,url,fields) { return "<form action='"+url+"' method='"+meth
 function message_form(obj,method,message,args) {
     return div("method "+method+"_method",form(method,obj.url()+'/'+message,[
         "<input type=submit value="+message+">",
-        args.map(function (arg) { return "<lable for='"+arg+"'>"+arg+": </label> <input type='text' name='"+arg+"'>"})
+        args.map(function (arg) {
+            var lable = '';
+            if (!/^_/.test(arg)) lable = "<lable for='"+arg+"'>"+arg+": </label>";
+            return lable+"<input type='text' name='"+arg+"'>"
+          })
       ]))
   };
 
@@ -163,7 +185,8 @@ class.instance_methods.bind_REST_class = function (name) {
          var target = this_class.find(req.params.id);
          var result = target[req.params.message];
          var args = [];
-         for (arg in req.body) if (req.body.hasOwnProperty(arg)) args.push(req.body[arg]);
+         for (arg in req.body) if (req.body.hasOwnProperty(arg)) args.push(object.find(req.body[arg]));
+         console.log(util.inspect(target),req.params.message,util.inspect(result),util.inspect(args));
          result = result.apply(target,args);
          res.redirect(result.url());
        });
@@ -247,7 +270,7 @@ Array.prototype.to_link  = function () {
 
 String.prototype.url     = function () { return "/string/"+encodeURIComponent(this) };
 
-[String,Number,Array].map(function (cls) {
+[Array,Boolean,Date,Number,RegExp,String].map(function (cls) {
     var c = class.new(cls.name.toLowerCase(),object,cls.prototype);
     Object.getOwnPropertyNames(c.instance_methods).map( function (x) {
         if (!/^_/.test(x)) {
@@ -268,8 +291,9 @@ class.find('array').find = function (x) {
     return decodeURIComponent(x).
       split(',').
       map(function (el) {
-        var cls_id = el.split('/');
-        return class.find(cls_id[1]).find(cls_id[2]);
+        //var cls_id = el.split('/');
+        //return class.find(cls_id[1]).find(cls_id[2]);
+        return object.find(el);
       });
   };
 
@@ -313,3 +337,6 @@ require('./graphviz_class_hierarchy').draw_class_hierarchy("classes","png",ruby_
       });
     });
 
+console.log('Should be 17: ',  util.inspect(object.find('number/17')));
+console.log('Should be "17": ',util.inspect(object.find('string/17')));
+console.log('Should be [1,7,"17"]: ',util.inspect(object.find('array/number%2F1,number%2F7,string%2F17')));

@@ -20,8 +20,6 @@ var object_instance_methods = {
     life_story: 'oim',
     initialize: function (/*arguments*/) { console.log('  object.instance_methods.initialize'); },
     };
-
-
 var class_instance_methods = chain(object_instance_methods,'cim');
 
 class_instance_methods.new = function (/*arguments*/) {
@@ -47,21 +45,12 @@ class_instance_methods.initialize = function (name,parent,instance_methods) {
     this.bind_REST_class(name);
   };
 class_instance_methods.bind_REST_class = function (name) { /* stub till we build REST */ };
-//class_instance_methods.name = 'class';
 class_instance_methods.to_string = function () { return this.name };
-class_instance_methods.find =  function (id) {
-    console.log("Looking for",arguments,"in",this.name);
-    var step = (id == '' && class) || this.instances[id] || this.instances.find_first(function (x) { return x.name == id; })
-    if (arguments.length == 1) {
-        return step
-      } else {
-        return step.find.apply(step,arguments.slice(1));
-      }
-    };
 
 var object = chain(class_instance_methods,'ocm');
 object.instance_methods = object_instance_methods;
 object.instance_methods.class = object;
+
 
 var class  = chain(object,'ccm');
 class.instance_methods = class_instance_methods;
@@ -78,9 +67,30 @@ class.new = function (name,parent,instance_methods) {
   };
 
 class.instances = [];
+class.find =  function (id) {
+    //console.log("Looking for",arguments,"in",this.name);
+    return (id == '' && class) || this.instances[id] || this.instances.find_first(function (x) { return x.name == id; })
+  };
+
+
 class.initialize('class');
 object.initialize('object');
 object.name = 'object';
+object.find =  function (id) {
+    console.log("Looking for",id);
+    var result = class;
+    id.split('/').map( function (s) {
+        if (result.class == class) {
+            console.log("   asking",result.name,"to find",s);
+            result = result.find(s)
+          } else if (result.hasOwnProperty(s)) {
+            console.log("   getting",s,"from",result.url());
+            result = result[s]
+          } else
+            console.log('Skipping "'+s+'" of "'+id+'".');
+     })
+    return result
+  };
 
 Object.prototype.life_story = "JSObj";
 

@@ -26,27 +26,45 @@ digraph snooze {
   }
     
     subgraph cluster_cluster_5 {
-    graph [label=string,bb="", bgcolor=lightgoldenrodyellow];
+    graph [label=array,bb="", bgcolor=lightgoldenrodyellow];
     node_9
     node_10
   }
     
     subgraph cluster_cluster_6 {
-    graph [label=number,bb="", bgcolor=lightgoldenrodyellow];
+    graph [label=boolean,bb="", bgcolor=lightgoldenrodyellow];
     node_11
     node_12
   }
     
     subgraph cluster_cluster_7 {
-    graph [label=array,bb="", bgcolor=lightgoldenrodyellow];
+    graph [label=date,bb="", bgcolor=lightgoldenrodyellow];
     node_13
     node_14
   }
     
     subgraph cluster_cluster_8 {
-    graph [label=enumeration,bb="", bgcolor=lightgoldenrodyellow];
+    graph [label=number,bb="", bgcolor=lightgoldenrodyellow];
     node_15
     node_16
+  }
+    
+    subgraph cluster_cluster_9 {
+    graph [label=regexp,bb="", bgcolor=lightgoldenrodyellow];
+    node_17
+    node_18
+  }
+    
+    subgraph cluster_cluster_10 {
+    graph [label=string,bb="", bgcolor=lightgoldenrodyellow];
+    node_19
+    node_20
+  }
+    
+    subgraph cluster_cluster_11 {
+    graph [label=enumeration,bb="", bgcolor=lightgoldenrodyellow];
+    node_21
+    node_22
   }
     
     node_4 -> node_2
@@ -62,36 +80,54 @@ digraph snooze {
     node_12 -> node_2
     node_13 -> node_1
     node_14 -> node_2
-    node_15 -> node_3
-    node_16 -> node_4
-    node_4 [label="{instance\nmethods\n|to_string\lnew\lindex\lto_link\linitialize\lfind\lsuper\lto_html\lclass\ldestroy\lbind_REST_class\llife_story\lurl\lshow\l}"]
+    node_15 -> node_1
+    node_16 -> node_2
+    node_17 -> node_1
+    node_18 -> node_2
+    node_19 -> node_1
+    node_20 -> node_2
+    node_21 -> node_3
+    node_22 -> node_4
+    node_4 [label="{instance\nmethods\n|to_string\lnew\lindex\lto_link\linitialize\lsuper\lto_html\lclass\ldestroy\lbind_REST_class\llife_story\lurl\lshow\l}"]
     node_2 [label="{instance\nmethods\n|to_link\linitialize\lid\lto_html\lclass\llife_story\lurl\l}"]
-    node_1 [label="{class\nmethods\n|instance_methods\lsuper\lname\llife_story\l}"]
-    node_4 [label="{instance\nmethods\n|to_string\lnew\lindex\lto_link\linitialize\lfind\lsuper\lto_html\lclass\ldestroy\lbind_REST_class\llife_story\lurl\lshow\l}"]
-    node_3 [label="{class\nmethods\n|new\linstance_methods\linstances\lsuper\lname\llife_story\l}"]
-    node_1 [label="{class\nmethods\n|instance_methods\lsuper\lname\llife_story\l}"]
+    node_1 [label="{class\nmethods\n|instance_methods\lfind\lsuper\lname\llife_story\l}"]
+    node_4 [label="{instance\nmethods\n|to_string\lnew\lindex\lto_link\linitialize\lsuper\lto_html\lclass\ldestroy\lbind_REST_class\llife_story\lurl\lshow\l}"]
+    node_3 [label="{class\nmethods\n|new\linstance_methods\linstances\lfind\lsuper\lname\llife_story\l}"]
+    node_1 [label="{class\nmethods\n|instance_methods\lfind\lsuper\lname\llife_story\l}"]
     node_5 [label="{class\nmethods\n|instance_methods\lsuper\lname\llife_story\l}"]
-    node_1 [label="{class\nmethods\n|instance_methods\lsuper\lname\llife_story\l}"]
+    node_1 [label="{class\nmethods\n|instance_methods\lfind\lsuper\lname\llife_story\l}"]
     node_6 [label="{instance\nmethods\n|super\lclass\llife_story\l}"]
     node_2 [label="{instance\nmethods\n|to_link\linitialize\lid\lto_html\lclass\llife_story\lurl\l}"]
     node_7 [label="{class\nmethods\n|instance_methods\lsuper\lname\llife_story\l}"]
-    node_1 [label="{class\nmethods\n|instance_methods\lsuper\lname\llife_story\l}"]
+    node_1 [label="{class\nmethods\n|instance_methods\lfind\lsuper\lname\llife_story\l}"]
     node_8 [label="{instance\nmethods\n|description\linitialize\lsuper\lclass\lname\lcode\llife_story\l}"]
     node_2 [label="{instance\nmethods\n|to_link\linitialize\lid\lto_html\lclass\llife_story\lurl\l}"]
     node_9 [label="{class\nmethods\n|instance_methods\lfind\lsuper\lname\llife_story\l}"]
-    node_1 [label="{class\nmethods\n|instance_methods\lsuper\lname\llife_story\l}"]
-    node_10 [label="{instance\nmethods\n|concat\lto_string\lsubstring\lto_locale_upper_case\litalics\ltrim_left\lstrike\lreplace\llocale_compare\lto_underscore\lto_upper_case\lchar_at\lfontsize\ltrim\llength\lsplit\lsubstr\lvalue_of\lto_locale_lower_case\lsub\lsuper\lindex_of\ltrim_right\lblink\lto_lower_case\lclass\llast_index_of\lsup\lfontcolor\llink\lchar_code_at\lbold\lanchor\llife_story\lconstructor\lsmall\lsearch\lfixed\lbig\lurl\lmatch\lslice\l}"]
+    node_1 [label="{class\nmethods\n|instance_methods\lfind\lsuper\lname\llife_story\l}"]
+    node_10 [label="{instance\nmethods\n|concat\lto_string\lmap\lsort\ljoin\lreduce_right\lfilter\lsome\lsplice\lshift\llength\lto_link\lsuper\lindex_of\lclass\lunshift\llast_index_of\lflatten\lto_locale_string\lreverse\lreduce\lpop\lfor_each\lpush\llife_story\lconstructor\levery\lurl\lslice\lfind_first\l}"]
     node_2 [label="{instance\nmethods\n|to_link\linitialize\lid\lto_html\lclass\llife_story\lurl\l}"]
-    node_11 [label="{class\nmethods\n|instance_methods\lfind\lsuper\lname\llife_story\l}"]
-    node_1 [label="{class\nmethods\n|instance_methods\lsuper\lname\llife_story\l}"]
-    node_12 [label="{instance\nmethods\n|to_string\lto_precision\lvalue_of\lsuper\lto_fixed\lclass\lto_locale_string\llife_story\lto_exponential\lconstructor\lurl\l}"]
+    node_11 [label="{class\nmethods\n|instance_methods\lsuper\lname\llife_story\l}"]
+    node_1 [label="{class\nmethods\n|instance_methods\lfind\lsuper\lname\llife_story\l}"]
+    node_12 [label="{instance\nmethods\n|to_string\lvalue_of\lsuper\lclass\llife_story\lconstructor\l}"]
     node_2 [label="{instance\nmethods\n|to_link\linitialize\lid\lto_html\lclass\llife_story\lurl\l}"]
-    node_13 [label="{class\nmethods\n|instance_methods\lfind\lsuper\lname\llife_story\l}"]
-    node_1 [label="{class\nmethods\n|instance_methods\lsuper\lname\llife_story\l}"]
-    node_14 [label="{instance\nmethods\n|concat\lto_string\lmap\lsort\ljoin\lreduce_right\lfilter\lsome\lsplice\lshift\llength\lto_link\lsuper\lindex_of\lclass\lunshift\llast_index_of\lflatten\lto_locale_string\lreverse\lreduce\lpop\lfor_each\lpush\llife_story\lconstructor\levery\lurl\lslice\lfind_first\l}"]
+    node_13 [label="{class\nmethods\n|instance_methods\lsuper\lname\llife_story\l}"]
+    node_1 [label="{class\nmethods\n|instance_methods\lfind\lsuper\lname\llife_story\l}"]
+    node_14 [label="{instance\nmethods\n|set_u_t_c_minutes\lto_string\lto_g_m_t_string\lget_u_t_c_minutes\lget_u_t_c_milliseconds\lget_year\lget_u_t_c_date\lset_u_t_c_month\lto_locale_date_string\lget_hours\lget_milliseconds\lto_i_s_o_string\lto_time_string\lget_u_t_c_hours\lget_minutes\lget_timezone_offset\lset_month\lget_time\lset_milliseconds\lget_seconds\lset_minutes\lvalue_of\lget_u_t_c_full_year\lget_u_t_c_day\lsuper\lset_hours\lset_u_t_c_hours\lset_time\lget_day\lto_locale_time_string\lset_u_t_c_full_year\lclass\lget_u_t_c_month\lset_full_year\lto_j_s_o_n\lget_full_year\lto_locale_string\lset_u_t_c_milliseconds\lto_u_t_c_string\lget_u_t_c_seconds\lto_date_string\lset_u_t_c_date\lset_seconds\lset_date\llife_story\lconstructor\lset_year\lget_month\lget_date\lset_u_t_c_seconds\l}"]
     node_2 [label="{instance\nmethods\n|to_link\linitialize\lid\lto_html\lclass\llife_story\lurl\l}"]
-    node_15 [label="{class\nmethods\n|instance_methods\lsuper\lname\llife_story\l}"]
-    node_3 [label="{class\nmethods\n|new\linstance_methods\linstances\lsuper\lname\llife_story\l}"]
-    node_16 [label="{instance\nmethods\n|initialize\lsuper\lclass\llife_story\l}"]
-    node_4 [label="{instance\nmethods\n|to_string\lnew\lindex\lto_link\linitialize\lfind\lsuper\lto_html\lclass\ldestroy\lbind_REST_class\llife_story\lurl\lshow\l}"]
+    node_15 [label="{class\nmethods\n|instance_methods\lfind\lsuper\lname\llife_story\l}"]
+    node_1 [label="{class\nmethods\n|instance_methods\lfind\lsuper\lname\llife_story\l}"]
+    node_16 [label="{instance\nmethods\n|to_string\lto_precision\lvalue_of\lsuper\lto_fixed\lclass\ladd\lto_locale_string\llife_story\lto_exponential\lconstructor\lurl\l}"]
+    node_2 [label="{instance\nmethods\n|to_link\linitialize\lid\lto_html\lclass\llife_story\lurl\l}"]
+    node_17 [label="{class\nmethods\n|instance_methods\lsuper\lname\llife_story\l}"]
+    node_1 [label="{class\nmethods\n|instance_methods\lfind\lsuper\lname\llife_story\l}"]
+    node_18 [label="{instance\nmethods\n|to_string\lsuper\lclass\llife_story\lconstructor\lexec\lcompile\ltest\l}"]
+    node_2 [label="{instance\nmethods\n|to_link\linitialize\lid\lto_html\lclass\llife_story\lurl\l}"]
+    node_19 [label="{class\nmethods\n|instance_methods\lfind\lsuper\lname\llife_story\l}"]
+    node_1 [label="{class\nmethods\n|instance_methods\lfind\lsuper\lname\llife_story\l}"]
+    node_20 [label="{instance\nmethods\n|concat\lto_string\lsubstring\lto_locale_upper_case\litalics\ltrim_left\lstrike\lreplace\llocale_compare\lto_underscore\lto_upper_case\lchar_at\lfontsize\ltrim\llength\lsplit\lsubstr\lvalue_of\lto_locale_lower_case\lsub\lsuper\lindex_of\ltrim_right\lblink\lto_lower_case\lclass\llast_index_of\lsup\lfontcolor\llink\lchar_code_at\lbold\lanchor\llife_story\lconstructor\lsmall\lsearch\lfixed\lbig\lurl\lmatch\lslice\l}"]
+    node_2 [label="{instance\nmethods\n|to_link\linitialize\lid\lto_html\lclass\llife_story\lurl\l}"]
+    node_21 [label="{class\nmethods\n|instance_methods\lsuper\lname\llife_story\l}"]
+    node_3 [label="{class\nmethods\n|new\linstance_methods\linstances\lfind\lsuper\lname\llife_story\l}"]
+    node_22 [label="{instance\nmethods\n|initialize\lsuper\lclass\llife_story\l}"]
+    node_4 [label="{instance\nmethods\n|to_string\lnew\lindex\lto_link\linitialize\lsuper\lto_html\lclass\ldestroy\lbind_REST_class\llife_story\lurl\lshow\l}"]
   }
