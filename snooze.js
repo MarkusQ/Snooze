@@ -44,12 +44,36 @@ with (Array.prototype) {
   }
 
 //Boolean
+Boolean.prototype.and      = function (x) { return this && x; }
+Boolean.prototype.or       = function (x) { return this || x; }
+Boolean.prototype.not      = function (x) { return !this; }
+with (Boolean.prototype) {
+    and._signature = ['_0'];
+    or._signature = ['_0'];
+  }
 
 //Date
 
 //Number
-Number.prototype.add = function (x) { console.log(util.inspect(this),'+',util.inspect(x)); return this+x; }
-Number.prototype.add._signature = ['_0'];
+Number.prototype.add      = function (x) { return this+x; }
+Number.prototype.subtract = function (x) { return this-x; }
+Number.prototype.multiply = function (x) { return this*x; }
+Number.prototype.divide   = function (x) { return this/x; }
+Number.prototype['lt']     = function (x) { return this < x; }
+Number.prototype.negate   = function () { return -this }
+Number.prototype.inverse  = function () { return 1.0/this };
+//[ 'LN10','PI','E','LOG10E','SQRT2','LOG2E','SQRT1_2','LN2']
+//['max','atan2','random','min' ]
+['cos','pow','log','tan','sqrt','ceil','asin','abs','exp','round','floor','acos','atan','sin' ].map(function (f) {
+    Number.prototype[f] = function () { return Math[f](this) }
+  })
+Number.prototype['lt']._signature = ['_0'];
+with (Number.prototype) {
+    add._signature = ['_0'];
+    subtract._signature = ['_0'];
+    multiply._signature = ['_0'];
+    divide._signature = ['_0'];
+  }
 
 //RegExp
 
@@ -231,7 +255,7 @@ class.instance_methods.to_html = function () { return  [
       this.super && ('<h2>Superclass</h2>'+this.super.to_link()),
       (this.known_methods && ('<div class=section><h2>Methods</h2>\n'+forms_for(this,this.known_methods()))+'</div>'),
       '<div class=section><h2>Instances 3</h2>',
-      (this.instances && this.instances.to_html() || "Too numerous to list".italics()),
+      (this.instances && this.instances.to_link() || "Too numerous to list".italics()),
       '</div>'
     ].join('')
   };
@@ -261,7 +285,7 @@ Object.prototype.to_format = function(format) {
 Object.prototype.bind_REST_class = object.bind_REST_class;
 Object.prototype.class = object;
 
-Number.prototype.url       = function () { return "/number/"+this };
+Boolean.prototype.url    = function () { return "/boolean/"+encodeURIComponent(this) };
 
 Array.prototype.url      = function () { return "/array/"+encodeURIComponent(this.map(function (x) { return x.url()}).join(',') ) };
 Array.prototype.to_link  = function () { 
@@ -270,7 +294,9 @@ Array.prototype.to_link  = function () {
       '</ul>';
   };
 
-String.prototype.url     = function () { return "/string/"+encodeURIComponent(this) };
+Number.prototype.url       = function () { return "/number/"+this };
+
+String.prototype.url       = function () { return "/string/"+encodeURIComponent(this) };
 
 [Array,Boolean,Date,Number,RegExp,String].map(function (cls) {
     var c = class.new(cls.name.toLowerCase(),object,cls.prototype);
@@ -282,7 +308,9 @@ String.prototype.url     = function () { return "/string/"+encodeURIComponent(th
     cls.prototype.class = c;
   });
 
-console.log(class.instances.map(function (c) { return c.name || "no name"; }));
+class.find('boolean').find = function (x) { return x == 'true' };
+class.find('boolean').instances = [false,true]
+
 
 class.find('number').find = parseFloat;
 class.find('number').instance_methods.to_string = function () { return this.toString() };
