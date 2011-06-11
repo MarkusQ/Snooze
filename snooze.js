@@ -35,11 +35,13 @@ Function.prototype.signature = function () {
   } 
 String.prototype.split._signature = ['delimiter'];
 
-Array.prototype.join._signature = ['delimiter'];
-Array.prototype.push._signature = ['items'];
-Array.prototype.slice._signature = ['from','to'];
-Array.prototype.splice._signature = ['from','count','replace with'];
-Array.prototype.unshift._signature = ['items'];
+with (Array.prototype) {
+    join._signature    = ['delimiter'];
+    push._signature    = ['items'];
+    slice._signature   = ['from','to'];
+    splice._signature  = ['from','count','replace with'];
+    unshift._signature = ['items'];
+  }
 
 //Boolean
 
@@ -59,7 +61,7 @@ Object.prototype.known_methods  = function () {
     //console.log(this.class.name+" has methods: "+Object.getOwnPropertyNames(this).join(", "));
     Object.getOwnPropertyNames(this).map(function (x) {
         if (!/^_/.test(x)) {
-            if (typeof self[x] == "function") {
+            if (self[x]['signature']) {
                 result.push({ message: x, method: "post", args: self[x].signature() });
               } else {
                 result.push({ message: x, method: "get" });
@@ -183,10 +185,10 @@ class.instance_methods.bind_REST_class = function (name) {
        });
     snooze.post(path + '/:id/:message', function(req,res) {
          var target = this_class.find(req.params.id);
-         var result = target[req.params.message];
+         var result = target.class.instance_methods[req.params.message];
          var args = [];
          for (arg in req.body) if (req.body.hasOwnProperty(arg)) args.push(object.find(req.body[arg]));
-         console.log(util.inspect(target),req.params.message,util.inspect(result),util.inspect(args));
+         console.log(target.class.name,util.inspect(target),req.params.message,util.inspect(result),util.inspect(args));
          result = result.apply(target,args);
          res.redirect(result.url());
        });
@@ -297,11 +299,49 @@ class.find('array').find = function (x) {
       });
   };
 
-Function.prototype.toString = function () { return "function"; };
-
 //
 //  Now start using it...
 //
+var lambda = class.new('lambda',class.find('function'));
+
+lambda.instance_methods.initialize = function (sig,body) {
+     this._signature = sig;
+     this.signature = function () { return sig; }
+     this.body = body.split("\n");
+  };
+
+lambda.instance_methods.apply = function (self,args) {
+    var line = 0;
+    var stack = [];
+    while (line >= 0 && line < this.body.length) {
+        var cmd = this.body[line];
+        line = line + 1
+        var i = 0;
+        cmd = cmd.gsub(/\[(\^|-?\d+)\]/,function (m) {
+            if (m[1] == '^')
+                return stack.pop().url()
+              else
+                return stack[sb[1]].url();
+            })
+        console.log(cmd);
+        cmd = cmd.gsub(/\{([^{}]*)\}/,function (m) { return encodeURIComponent(m[1])} )
+        console.log(cmd);
+        switch (cmd.match(/^ *([#A-Z]*)(.*)/)[1]) {
+          case "#":
+            break;
+          case "GET":
+            stack.push(object.find(cmd.match(/^ *[#A-Z]* +(.*)/)[1]));
+            break;
+          default:
+            if (!body[line]) console.log("Bad step in lambda: ",cmd)
+          }
+      }
+    return stack.pop();
+  };
+
+class.find('string').instance_methods.goop = lambda.new([],"GET number/42");
+class.find('string').instance_methods.glop = lambda.new([],"GET number/42\nGET number/8\nGET array/{[^],[^]}");
+
 var enumeration = class.new('enumeration',class)
 enumeration.instance_methods.initialize = function (name,values) {
     console.log('  enumeration.instance_methods.initialize');

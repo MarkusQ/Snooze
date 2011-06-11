@@ -39,7 +39,7 @@ class_instance_methods.initialize = function (name,parent,instance_methods) {
             self.instance_methods[x.toUnderscore()] = instance_methods[x];
           });
       }
-    console.log('Setting name of '+name);
+    if (verbose) console.log('Setting name of '+name);
     this.name = name;
     class.instances.push(this);
     this.bind_REST_class(name);
@@ -77,26 +77,20 @@ class.initialize('class');
 object.initialize('object');
 object.name = 'object';
 object.find =  function (id) {
-    console.log("Looking for",id);
+    if (verbose) console.log("Looking for",id);
     var result = class;
     id.split('/').map( function (s) {
-        if (result.class == class) {
-            console.log("   asking",result.name,"to find",s);
+        if (result.class == class)
             result = result.find(s)
-          } else if (result.hasOwnProperty(s)) {
-            console.log("   getting",s,"from",result.url());
+          else if (result.hasOwnProperty(s)) 
             result = result[s]
-          } else
+          else
             console.log('Skipping "'+s+'" of "'+id+'".');
      })
     return result
   };
 
 Object.prototype.life_story = "JSObj";
-
-console.log("class.new should not be the same as object.new",class.new != object.new && 'pass' || 'fail');
-//console.log( class.life_story);
-//console.log(object.life_story);
 
 exports.known_classes = known_classes
 exports.class         = class

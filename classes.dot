@@ -62,9 +62,17 @@ digraph snooze {
   }
     
     subgraph cluster_cluster_11 {
-    graph [label=enumeration,bb="", bgcolor=lightgoldenrodyellow];
+    graph [label=lambda,bb="", bgcolor=lightgoldenrodyellow];
     node_21
     node_22
+  }
+    
+    
+    
+    subgraph cluster_cluster_12 {
+    graph [label=enumeration,bb="", bgcolor=lightgoldenrodyellow];
+    node_23
+    node_24
   }
     
     node_4 -> node_2
@@ -86,8 +94,12 @@ digraph snooze {
     node_18 -> node_2
     node_19 -> node_1
     node_20 -> node_2
-    node_21 -> node_3
-    node_22 -> node_4
+    node_21 -> node_1
+    node_22 -> node_2
+    node_25 -> node_22
+    node_26 -> node_22
+    node_23 -> node_3
+    node_24 -> node_4
     node_4 [label="{instance\nmethods\n|to_string\lnew\lindex\lto_link\linitialize\lsuper\lto_html\lclass\ldestroy\lbind_REST_class\llife_story\lurl\lshow\l}"]
     node_2 [label="{instance\nmethods\n|to_link\linitialize\lid\lto_html\lclass\llife_story\lurl\l}"]
     node_1 [label="{class\nmethods\n|instance_methods\lfind\lsuper\lname\llife_story\l}"]
@@ -124,10 +136,18 @@ digraph snooze {
     node_2 [label="{instance\nmethods\n|to_link\linitialize\lid\lto_html\lclass\llife_story\lurl\l}"]
     node_19 [label="{class\nmethods\n|instance_methods\lfind\lsuper\lname\llife_story\l}"]
     node_1 [label="{class\nmethods\n|instance_methods\lfind\lsuper\lname\llife_story\l}"]
-    node_20 [label="{instance\nmethods\n|concat\lto_string\lsubstring\lto_locale_upper_case\litalics\ltrim_left\lstrike\lreplace\llocale_compare\lto_underscore\lto_upper_case\lchar_at\lfontsize\ltrim\llength\lsplit\lsubstr\lvalue_of\lto_locale_lower_case\lsub\lsuper\lindex_of\ltrim_right\lblink\lto_lower_case\lclass\llast_index_of\lsup\lfontcolor\llink\lchar_code_at\lbold\lanchor\llife_story\lconstructor\lsmall\lsearch\lfixed\lbig\lurl\lmatch\lslice\l}"]
+    node_20 [label="{instance\nmethods\n|concat\lto_string\lsubstring\lgsub\lto_locale_upper_case\litalics\ltrim_left\lstrike\lreplace\llocale_compare\lto_underscore\lto_upper_case\lchar_at\lfontsize\ltrim\llength\lsplit\lsubstr\lvalue_of\lto_locale_lower_case\lsub\lsuper\lindex_of\ltrim_right\lblink\lto_lower_case\lclass\llast_index_of\lsup\lfontcolor\llink\lchar_code_at\lbold\lanchor\llife_story\lconstructor\lsmall\lsearch\lglop\lfixed\lbig\lurl\lmatch\lgoop\lslice\l}"]
     node_2 [label="{instance\nmethods\n|to_link\linitialize\lid\lto_html\lclass\llife_story\lurl\l}"]
     node_21 [label="{class\nmethods\n|instance_methods\lsuper\lname\llife_story\l}"]
+    node_1 [label="{class\nmethods\n|instance_methods\lfind\lsuper\lname\llife_story\l}"]
+    node_22 [label="{instance\nmethods\n|initialize\lsuper\lclass\lapply\llife_story\l}"]
+    node_2 [label="{instance\nmethods\n|to_link\linitialize\lid\lto_html\lclass\llife_story\lurl\l}"]
+    node_25 []
+    node_22 [label="{instance\nmethods\n|initialize\lsuper\lclass\lapply\llife_story\l}"]
+    node_26 []
+    node_22 [label="{instance\nmethods\n|initialize\lsuper\lclass\lapply\llife_story\l}"]
+    node_23 [label="{class\nmethods\n|instance_methods\lsuper\lname\llife_story\l}"]
     node_3 [label="{class\nmethods\n|new\linstance_methods\linstances\lfind\lsuper\lname\llife_story\l}"]
-    node_22 [label="{instance\nmethods\n|initialize\lsuper\lclass\llife_story\l}"]
+    node_24 [label="{instance\nmethods\n|initialize\lsuper\lclass\llife_story\l}"]
     node_4 [label="{instance\nmethods\n|to_string\lnew\lindex\lto_link\linitialize\lsuper\lto_html\lclass\ldestroy\lbind_REST_class\llife_story\lurl\lshow\l}"]
   }
