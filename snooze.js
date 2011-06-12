@@ -4,7 +4,7 @@
 require('./me_and_my_monkey_patches');
 var http       = require('http');
 var util       = require('util');
-var url        = require('url');
+var url_lib    = require('url');
 var fs         = require('fs');
 var querystring = require('querystring');
 var express    = require('../../node/node_modules/express')
@@ -44,9 +44,11 @@ with (Array.prototype) {
   }
 
 //Boolean
-Boolean.prototype.and      = function (x) { return this && x; }
-Boolean.prototype.or       = function (x) { return this || x; }
-Boolean.prototype.not      = function (x) { return !this; }
+Boolean.prototype.and      = function (x)   { return this && x; }
+Boolean.prototype.or       = function (x)   { return this || x; }
+Boolean.prototype.not      = function (x)   { return this != true; }
+Boolean.prototype.if       = function (t,e) { return this ? t : e;}
+Boolean.prototype.if._signature = ['then','else'];
 with (Boolean.prototype) {
     and._signature = ['_0'];
     or._signature = ['_0'];
@@ -59,21 +61,27 @@ Number.prototype.add      = function (x) { return this+x; }
 Number.prototype.subtract = function (x) { return this-x; }
 Number.prototype.multiply = function (x) { return this*x; }
 Number.prototype.divide   = function (x) { return this/x; }
-Number.prototype['lt']     = function (x) { return this < x; }
-Number.prototype.negate   = function () { return -this }
-Number.prototype.inverse  = function () { return 1.0/this };
-//[ 'LN10','PI','E','LOG10E','SQRT2','LOG2E','SQRT1_2','LN2']
-//['max','atan2','random','min' ]
-['cos','pow','log','tan','sqrt','ceil','asin','abs','exp','round','floor','acos','atan','sin' ].map(function (f) {
-    Number.prototype[f] = function () { return Math[f](this) }
-  })
-Number.prototype['lt']._signature = ['_0'];
 with (Number.prototype) {
     add._signature = ['_0'];
     subtract._signature = ['_0'];
     multiply._signature = ['_0'];
     divide._signature = ['_0'];
   }
+
+Number.prototype.negate   = function () { return -this }
+Number.prototype.inverse  = function () { return 1.0/this };
+Number.prototype.chr      = function () { return String.fromCharCode(this) };
+
+Number.prototype['lt']     = function (x) { return this <  x }; Number.prototype['lt']._signature = ['_0'];
+Number.prototype['le']     = function (x) { return this <= x }; Number.prototype['le']._signature = ['_0'];
+Number.prototype['gt']     = function (x) { return this >  x }; Number.prototype['gt']._signature = ['_0'];
+Number.prototype['ge']     = function (x) { return this >= x }; Number.prototype['ge']._signature = ['_0'];
+
+//[ 'LN10','PI','E','LOG10E','SQRT2','LOG2E','SQRT1_2','LN2']
+//['max','atan2','random','min' ]
+['cos','pow','log','tan','sqrt','ceil','asin','abs','exp','round','floor','acos','atan','sin' ].map(function (f) {
+    Number.prototype[f] = function () { return Math[f](this) }
+  })
 
 //RegExp
 
@@ -212,8 +220,9 @@ class.instance_methods.bind_REST_class = function (name) {
          var result = target.class.instance_methods[req.params.message];
          var args = [];
          for (arg in req.body) if (req.body.hasOwnProperty(arg)) args.push(object.find(req.body[arg]));
-         console.log(target.class.name,util.inspect(target),req.params.message,util.inspect(result),util.inspect(args));
+         //console.log(target.class.name,util.inspect(target),req.params.message,util.inspect(result),util.inspect(args));
          result = result.apply(target,args);
+         //console.log('result: ',util.inspect(result));
          res.redirect(result.url());
        });
     };
@@ -234,7 +243,7 @@ class.instance_methods.to_html = function () {
 
 class.instance_methods.show = function(req, res) {
     var obj = this.find(req.params.id);
-    if (obj)
+    if (obj != undefined)
         res.send(css+obj.to_html())
       else {
         res.writeHeader(300,this.name + " does not have a '"+req.params.id+'"');
@@ -308,7 +317,7 @@ String.prototype.url       = function () { return "/string/"+encodeURIComponent(
     cls.prototype.class = c;
   });
 
-class.find('boolean').find = function (x) { return x == 'true' };
+class.find('boolean').find = function (x) { 1/0; return x == 'true' };
 class.find('boolean').instances = [false,true]
 
 
@@ -326,18 +335,30 @@ class.find('array').find = function (x) {
         return object.find(el);
       });
   };
+Array.prototype.collect =  function (f) {
+    return this.map(function (x) { return f.apply(x,[x]) });
+  }
+
+Array.prototype.inject =  function (f) {
+    return this.reduce(function (a,b) { return a.send(f,[b]) });
+  }
 
 //
 //  Now start using it...
 //
 var lambda = class.new('lambda',class.find('function'));
 
+lambda.find = function (id) {
+    var s_b = decodeURIComponent(id).split('->');
+    return lambda.new(s_b.shift(),s_b.join('->'));
+  };
 lambda.instance_methods.initialize = function (sig,body) {
-     this._signature = sig;
-     this.signature = function () { return sig; }
-     this.body = body.split("\n");
+    this._signature = sig;
+    this.signature = function () { return sig; }
+    this.body = body.split("\n");
   };
 
+var trace_lambdas = false;
 lambda.instance_methods.apply = function (self,args) {
     var line = 0;
     var stack = [];
@@ -345,45 +366,73 @@ lambda.instance_methods.apply = function (self,args) {
         var cmd = this.body[line];
         line = line + 1
         var i = 0;
+        if (trace_lambdas) console.log('stack: ',stack.map(function (x) { return x.url(); }).join(' '));
+        if (trace_lambdas) console.log('unmodified command:',cmd);
         cmd = cmd.gsub(/\[(\^|-?\d+)\]/,function (m) {
             if (m[1] == '^')
                 return stack.pop().url()
               else
                 return stack[sb[1]].url();
-            })
-        console.log(cmd);
+            });
+        if (trace_lambdas) console.log('after substitution:',cmd);
         cmd = cmd.gsub(/\{([^{}]*)\}/,function (m) { return encodeURIComponent(m[1])} )
-        console.log(cmd);
-        switch (cmd.match(/^ *([#A-Z]*)(.*)/)[1]) {
-          case "#":
-            break;
-          case "GET":
-            stack.push(object.find(cmd.match(/^ *[#A-Z]* +(.*)/)[1]));
-            break;
-          default:
-            if (!body[line]) console.log("Bad step in lambda: ",cmd)
-          }
+        if (trace_lambdas) console.log('after encoding:',cmd);
+        var m = /^ *(GET|POST) *(.*)/.exec(cmd);
+        if (m) {
+            var method = m[1];
+            var target = m[2]
+            if (target[0] != '/') target = self.url() + '/' + target;
+            switch (method) {
+              case "GET":
+                stack.push(object.find(target));
+                break;
+              case "POST":
+                target = url_lib.parse(target,true);
+                query = target.query;
+                var path = target.pathname.split('/');
+                var method = path.pop();
+                var target = object.find(path.join('/'));
+                var args = [];
+         	for (arg in query) if (query.hasOwnProperty(arg)) args.push(object.find(query[arg]));
+                stack.push(target[method].apply(target,args));
+                break;
+              }
+          } else 
+            if (!/^ *#/.test(cmd)) console.log("Bad step in lambda: ",cmd);
       }
+    if (trace_lambdas) console.log("Returning ",stack[stack.length-1].url());
     return stack.pop();
   };
 
-class.find('string').instance_methods.goop = lambda.new([],"GET number/42");
-class.find('string').instance_methods.glop = lambda.new([],"GET number/42\nGET number/8\nGET array/{[^],[^]}");
+class.find('string').instance_methods.goop = lambda.new([],"GET /number/42");
+class.find('string').instance_methods.glop = lambda.new([],"GET /number/42\nGET /number/8\nGET /array/{[^],[^]}");
+class.find('string').instance_methods.ave = lambda.new([],[
+    "GET length",
+    "POST split?delemiter={/string/}",
+    "POST [^]/collect?function={/lambda/{->POST charCodeAt?loc=/number/0}}",
+    "POST [^]/inject?function=/string/add",
+    "POST [^]/divide?by=[^]",
+    "POST [^]/chr",
+  ].join("\n"));
+
+var url=class.new('url',class.find('string'));
+
 
 var enumeration = class.new('enumeration',class)
-enumeration.instance_methods.initialize = function (name,values) {
-    console.log('  enumeration.instance_methods.initialize');
+enumeration.new = function (name,values) {
+    var result = class.new(name,enumeration);
     //this.super.instance_methods.initialize.apply(this,name);
     //class.instance_methods.initialize.apply(this);
     var q = 0;
-    this.instances = values.map(function (x) {
+    result.instances = values.map(function (x) {
       q = q+1;
       return { name: x,  id: q-1 }
       });
-    console.log(this.name,this.instances);
+    console.log(result.name,result.instances);
+    return result;
     };
 
-//var hue = enumeration.new('hue',['red','orange','yellow','green','blue','violet']);
+var http_method = enumeration.new('http_method',['post','get','put','del','head']);
 
 snooze.get('/', function(req, res){ res.redirect("/class") });
 

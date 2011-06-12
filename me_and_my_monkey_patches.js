@@ -4,6 +4,7 @@ Object.prototype.bound_method = function (method) {
     return self[method].apply(self, arguments);
   };
 }
+Object.prototype.send = function (m,args) { return this[m].apply(this,args) };
 
 String.prototype.toUnderscore = function(){
     return this.replace(/([A-Z])/g, function(ch) {return "_"+ch.toLowerCase();});
@@ -12,11 +13,11 @@ String.prototype.toUnderscore = function(){
 String.prototype.gsub = function (pat,rep) {
     var result = this;
     while (x = pat.exec(result)) {
-        var pre  = RegExp.leftContext
-        var post = RegExp.rightContext
-        result = pre+rep(x)+post
+        var pre  = RegExp.leftContext;
+        var post = RegExp.rightContext;
+        result = pre+rep(x)+post;
         }
-    return result
+    return ''+result
   }    
 
 
