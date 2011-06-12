@@ -11,6 +11,7 @@ function chain(parent) {
     f.prototype = parent;
     var result = new f();
     result.super = parent;
+    result.my = result;
     known_classes.push([result,parent]);
     return result;
     };
@@ -24,7 +25,6 @@ class_instance_methods.new = function (/*arguments*/) {
     if (verbose) console.log(this.name+'.new('+util.inspect(arguments).slice(1.80)+'...?)');
     var result = chain(this.instance_methods);
     result.class = this.class;
-    //this.class.instance_methods.initialize.apply(result,arguments);
     result.initialize.apply(result,arguments);
     return result;
   };

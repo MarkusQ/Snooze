@@ -194,7 +194,7 @@ object.instance_methods.id       = function () { return this.toString() };
 object.instance_methods.to_link  = function () { return "<a href="+this.url()+">"+this.toString()+"</a>" };
 object.instance_methods.to_html  = function () { 
     return  [
-      '<h1>'+this.to_string()+'</h1>',
+      '<h1>'+(new String(this)).to_string()+'</h1>',
       '<h2>Class</h2>'+this.class.to_link(),
       (this.known_methods && '<div><h2>Methods</h2>\n'+forms_for(this,this.known_methods())+'</div>'),
       '<div><h2>Instances 1</h2>',
@@ -212,12 +212,13 @@ class.instance_methods.bind_REST_class = function (name) {
     snooze.del(path + '/:id',          this.bound_method('destroy'));
     snooze.get(path + '/:id/:message', function(req,res) {
          var target = this_class.find(req.params.id);
-         var result = target[req.params.message];
+         var result = target.my[req.params.message];
+         //console.log(target.class.name,target,req.params.message,result)
          res.redirect(result.url());
        });
     snooze.post(path + '/:id/:message', function(req,res) {
          var target = this_class.find(req.params.id);
-         var result = target.class.instance_methods[req.params.message];
+         var result = target.my[req.params.message];
          var args = [];
          for (arg in req.body) if (req.body.hasOwnProperty(arg)) args.push(object.find(req.body[arg]));
          //console.log(target.class.name,util.inspect(target),req.params.message,util.inspect(result),util.inspect(args));
@@ -293,6 +294,7 @@ Object.prototype.to_format = function(format) {
   }
 Object.prototype.bind_REST_class = object.bind_REST_class;
 Object.prototype.class = object;
+Object.prototype.my = object.instance_methods;
 
 Boolean.prototype.url    = function () { return "/boolean/"+encodeURIComponent(this) };
 
@@ -315,6 +317,7 @@ String.prototype.url       = function () { return "/string/"+encodeURIComponent(
           }
       });
     cls.prototype.class = c;
+    cls.prototype.my = c.instance_methods;
   });
 
 class.find('boolean').find = function (x) { 1/0; return x == 'true' };
@@ -357,6 +360,7 @@ lambda.instance_methods.initialize = function (sig,body) {
     this.signature = function () { return sig; }
     this.body = body.split("\n");
   };
+lambda.instance_methods.url = function () { return "/lambda/"+encodeURIComponent([this.signature()].flatten().join(',')+'->'+[this.body].flatten().join("\n")) }
 
 var trace_lambdas = false;
 lambda.instance_methods.apply = function (self,args) {
