@@ -194,12 +194,9 @@ object.instance_methods.id       = function () { return this.toString() };
 object.instance_methods.to_link  = function () { return "<a href="+this.url()+">"+this.toString()+"</a>" };
 object.instance_methods.to_html  = function () { 
     return  [
-      '<h1>'+(new String(this)).to_string()+'</h1>',
+      '<h1>'+this.to_link()+'</h1>',
       '<h2>Class</h2>'+this.class.to_link(),
       (this.known_methods && '<div><h2>Methods</h2>\n'+forms_for(this,this.known_methods())+'</div>'),
-      '<div><h2>Instances 1</h2>',
-      (this.instances || "Too numerous to list").to_link(),
-      '</div>'
       ].join('')
     };
 
@@ -231,6 +228,7 @@ class.instance_methods.bind_REST_class = function (name) {
 class.bind_REST_class('class');
 object.bind_REST_class('object');
 
+/*
 class.instance_methods.to_html = function () { 
     return [
       '<h1>'+this.name+'</h1>',
@@ -240,7 +238,7 @@ class.instance_methods.to_html = function () {
       (this.instances || "Too numerous to list").to_html()
     ].join('')
   }
-
+*/
 
 class.instance_methods.show = function(req, res) {
     var obj = this.find(req.params.id);
@@ -264,7 +262,7 @@ class.instance_methods.to_html = function () { return  [
       '<h1>'+this.to_string()+'</h1>',
       this.super && ('<h2>Superclass</h2>'+this.super.to_link()),
       (this.known_methods && ('<div class=section><h2>Methods</h2>\n'+forms_for(this,this.known_methods()))+'</div>'),
-      '<div class=section><h2>Instances 3</h2>',
+      '<div class=section><h2>Instances</h2>',
       (this.instances && this.instances.to_link() || "Too numerous to list".italics()),
       '</div>'
     ].join('')
@@ -406,6 +404,14 @@ lambda.instance_methods.apply = function (self,args) {
       }
     if (trace_lambdas) console.log("Returning ",stack[stack.length-1].url());
     return stack.pop();
+  };
+lambda.instance_methods.to_string = function () {
+    return 'λ('+[this.signature()].flatten().join(',')+')->\n'+[this.body].flatten().join("\n");
+  }
+lambda.instance_methods.to_link  = function () { 
+    return '<b>λ</b>('+[this.signature()].flatten().join(',')+')<b>-></b><blockquote>'+
+        '<ol><li>'+[this.body].flatten().join("</li>\n<li>")+"\n</li></ol>"+
+      "</blockquote>";
   };
 
 class.find('string').instance_methods.goop = lambda.new([],"GET /number/42");
