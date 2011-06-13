@@ -66,7 +66,8 @@ class.new = function (name,parent,instance_methods) {
 class.instances = [];
 class.find =  function (id) {
     //console.log("Looking for",arguments,"in",this.name);
-    return (id == '' && class) || this.instances[id] || this.instances.find_first(function (x) { return x.name == id; })
+    if (id == '') return class;
+    return this.instances.find_first(function (x) { return x.name == id; })
   };
 
 

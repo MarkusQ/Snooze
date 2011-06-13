@@ -7,7 +7,7 @@ var util       = require('util');
 var url_lib    = require('url');
 var fs         = require('fs');
 var querystring = require('querystring');
-var express    = require('../../node/node_modules/express')
+var express    = require('express')
 var ruby_style = require('./ruby_style_class_system.js')
 var class      = ruby_style.class
 var object     = ruby_style.object
@@ -100,6 +100,7 @@ Object.prototype.known_methods  = function () {
               }
           }
       });
+    result.sort(function (a,b) { return (a.message < b.message) ? -1 : 1 });
     if (this.super) {
         return [{source:this, methods:result}].concat(this.super.known_methods());
         var result = this.super.known_methods();
@@ -159,10 +160,16 @@ function forms_for(target,methods) {
     return methods.map(function (layer) {
         var cls = layer['source'];
         if (cls._dot_role == 'instance') cls = cls.class;
-        return div('section','<h3>'+cls.to_link()+' ('+layer['source']._dot_role+' methods)</h3>'+
+        return div('section','<h3>'+cls.to_link()+' ('+layer['source']._dot_role+' members)</h3>'+
+            layer.methods.map(function (m) {
+                var desc = (m.method != "post") ? m.message : (typeof target[m.message] != "function") ? (m.message+" (λ)") : '';
+                return desc ? ("<div class='method get_method'><a href='"+target.url()+'/'+m.message+"'>"+desc+"</a></div>") : ""}
+              ).join("\n")+
+            "<div class=section></div>"+
             layer['methods'].map(function (m) {
-                return message_form(target,m['method']||'get',m['message'],m['args']||[])
-              }).join("\n"))
+                return ((m['method']=='post') ? message_form(target,m['method']||'get',m['message'],m['args']||[]) : '')
+              }).join("\n")+
+            '')
       }).join("\n")
   };
 
@@ -228,18 +235,6 @@ class.instance_methods.bind_REST_class = function (name) {
 class.bind_REST_class('class');
 object.bind_REST_class('object');
 
-/*
-class.instance_methods.to_html = function () { 
-    return [
-      '<h1>'+this.name+'</h1>',
-      this.super && ('<h2>Superclass</h2>'+this.super.to_link()),
-      (this.known_methods && ['<h2>Methods</h2>' + this.known_methods.map(function (m) { message_form(this,m['method']||'get',m['message'],m['args']||[])}).join('') ]) || '',
-      '<h2>Instances 2</h2>',
-      (this.instances || "Too numerous to list").to_html()
-    ].join('')
-  }
-*/
-
 class.instance_methods.show = function(req, res) {
     var obj = this.find(req.params.id);
     if (obj != undefined)
@@ -259,7 +254,7 @@ class.instance_methods.destroy = function(req, res){
 class.instance_methods.url =  function () { return "/"+this.name };
 class.instance_methods.to_link =  function () { return "<a href='"+this.url()+"'>"+this.name+"</a>" };
 class.instance_methods.to_html = function () { return  [
-      '<h1>'+this.to_string()+'</h1>',
+      '<h1>'+this.to_link()+'</h1>',
       this.super && ('<h2>Superclass</h2>'+this.super.to_link()),
       (this.known_methods && ('<div class=section><h2>Methods</h2>\n'+forms_for(this,this.known_methods()))+'</div>'),
       '<div class=section><h2>Instances</h2>',
