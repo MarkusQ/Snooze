@@ -215,21 +215,23 @@ class.instance_methods.bind_REST_class = function (name) {
     snooze.get(path + '/:id',          this.bound_method('show'));
     snooze.del(path + '/:id',          this.bound_method('destroy'));
     snooze.get(path + '/:id/:message', function(req,res) {
-         var target = this_class.find(req.params.id);
-         var result = target.my[req.params.message];
-         //console.log(target.class.name,target,req.params.message,result)
-         res.redirect(result.url());
-       });
+        var message = req.params.message;
+        var target = this_class.find(req.params.id);
+        var result = (target.hasOwnProperty(message) ? target[message] : target.my[message]);
+        console.log(target.class.name,target,req.params.message,result)
+        res.redirect(result.url());
+      });
     snooze.post(path + '/:id/:message', function(req,res) {
-         var target = this_class.find(req.params.id);
-         var result = target.my[req.params.message];
-         var args = [];
-         for (arg in req.body) if (req.body.hasOwnProperty(arg)) args.push(object.find(req.body[arg]));
-         //console.log(target.class.name,util.inspect(target),req.params.message,util.inspect(result),util.inspect(args));
-         result = result.apply(target,args);
-         //console.log('result: ',util.inspect(result));
-         res.redirect(result.url());
-       });
+        var message = req.params.message;
+        var target = this_class.find(req.params.id);
+        var result = (target.hasOwnProperty(message) ? target[message] : target.my[message]);
+        var args = [];
+        for (arg in req.body) if (req.body.hasOwnProperty(arg)) args.push(object.find(req.body[arg]));
+        //console.log(target.class.name,util.inspect(target),req.params.message,util.inspect(result),util.inspect(args));
+        result = result.apply(target,args);
+        //console.log('result: ',util.inspect(result));
+        res.redirect(result.url());
+      });
     };
 
 class.bind_REST_class('class');
