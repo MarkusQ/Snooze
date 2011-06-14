@@ -469,7 +469,6 @@ console.log('Snooze started on port 2222');
 function serve_binary(file_name,mime_type) {
     return function(req, res){
         fs.readFile(file_name, "binary", function(err, contents) {  
-            console.log(contents.length," bytes in classes.png");
             if (err) {  
                 res.writeHead(500, {"Content-Type": "text/plain"});  
                 res.write(err + "\n");  
