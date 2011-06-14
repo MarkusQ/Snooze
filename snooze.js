@@ -33,7 +33,6 @@ Function.prototype.signature = function () {
         for (var i = 0; i < this.arity(); i++) signature.push('_'+signature.length);
     return signature;
   } 
-String.prototype.split._signature = ['delimiter'];
 
 with (Array.prototype) {
     join._signature    = ['delimiter'];
@@ -53,6 +52,8 @@ with (Boolean.prototype) {
     and._signature = ['_0'];
     or._signature = ['_0'];
   }
+
+//
 
 //Date
 
@@ -86,6 +87,7 @@ Number.prototype['ge']     = function (x) { return this >= x }; Number.prototype
 //RegExp
 
 //String
+String.prototype.split._signature = ['delimiter'];
 
 Object.prototype.known_methods  = function () {
     var self = this;
@@ -207,6 +209,7 @@ object.instance_methods.to_html  = function () {
       ].join('')
     };
 
+var no_such_object = function () {};
 class.instance_methods.bind_REST_class = function (name) {
     var path = '/'+name;
     var this_class = this;
@@ -217,9 +220,15 @@ class.instance_methods.bind_REST_class = function (name) {
     snooze.get(path + '/:id/:message', function(req,res) {
         var message = req.params.message;
         var target = this_class.find(req.params.id);
-        var result = (target.hasOwnProperty(message) ? target[message] : target.my[message]);
-        console.log(target.class.name,target,req.params.message,result)
-        res.redirect(result.url());
+        if (target == no_such_object) {
+            res.writeHeader(400,req.params.id);
+            res.write(400,req.params.id);
+            res.end();
+          } else {
+            var result = (target.hasOwnProperty(message) ? target[message] : target.my[message]);
+            //console.log(target.class.name,target.to_string(),req.params.message,result.to_string())
+            res.redirect(result.url());
+          }
       });
     snooze.post(path + '/:id/:message', function(req,res) {
         var message = req.params.message;
@@ -253,7 +262,7 @@ class.instance_methods.destroy = function(req, res){
     delete this.instances[id];
     res.send(destroyed ? 'destroyed' : ('Cannot find '+name+'/'+id) );
   };
-class.instance_methods.url =  function () { return "/"+this.name };
+class.instance_methods.url =  function () { return "/class/"+this.name };
 class.instance_methods.to_link =  function () { return "<a href='"+this.url()+"'>"+this.name+"</a>" };
 class.instance_methods.to_html = function () { return  [
       '<h1>'+this.to_link()+'</h1>',
@@ -317,12 +326,15 @@ String.prototype.url       = function () { return "/string/"+encodeURIComponent(
 
 class.find('boolean').find = function (x) { 1/0; return x == 'true' };
 class.find('boolean').instances = [false,true]
+class.find('boolean').find._signature = ["name"];
 
 
 class.find('number').find = parseFloat;
 class.find('number').instance_methods.to_string = function () { return this.toString() };
+class.find('number').find._signature = ["name"];
 
 class.find('string').find = decodeURIComponent;
+class.find('string').find._signature = ["name"];
 
 class.find('array').find = function (x) {
     return decodeURIComponent(x).
@@ -333,6 +345,8 @@ class.find('array').find = function (x) {
         return object.find(el);
       });
   };
+class.find('array').find._signature = ["name"];
+
 Array.prototype.collect =  function (f) {
     return this.map(function (x) { return f.apply(x,[x]) });
   }
@@ -350,6 +364,8 @@ lambda.find = function (id) {
     var s_b = decodeURIComponent(id).split('->');
     return lambda.new(s_b.shift(),s_b.join('->'));
   };
+lambda.find._signature = ["name"];
+
 lambda.instance_methods.initialize = function (sig,body) {
     this._signature = sig;
     this.signature = function () { return sig; }
