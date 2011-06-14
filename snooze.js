@@ -460,6 +460,9 @@ var http_method = enumeration.new('http_method',['post','get','put','del','head'
 snooze.get('/', function(req, res){ res.redirect("/class") });
 
 snooze.listen(2222);
+snooze.on('request', function (req,res) {
+    console.log('Request from ',req.connection.remoteAddress,' for ',req.url);
+  });
 console.log('Snooze started on port 2222');
 
 require('./graphviz_class_hierarchy').draw_class_hierarchy("classes","png",ruby_style.known_classes, function () {
