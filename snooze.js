@@ -465,9 +465,10 @@ snooze.on('request', function (req,res) {
   });
 console.log('Snooze started on port 2222');
 
-require('./graphviz_class_hierarchy').draw_class_hierarchy("classes","png",ruby_style.known_classes, function () {
-    snooze.get('/class_picture.png', function(req, res){
-        fs.readFile('classes.png', "binary", function(err, contents) {  
+// <link rel="shortcut icon" href="favicon.ico" >
+function serve_binary(file_name,mime_type) {
+    return function(req, res){
+        fs.readFile(file_name, "binary", function(err, contents) {  
             console.log(contents.length," bytes in classes.png");
             if (err) {  
                 res.writeHead(500, {"Content-Type": "text/plain"});  
@@ -476,9 +477,15 @@ require('./graphviz_class_hierarchy').draw_class_hierarchy("classes","png",ruby_
                 res.writeHead(200, {'Content-Type': 'image/png' });
                 res.end(contents,"binary");
               }
-          });
-      });
+          })
+      }
+  };
+
+
+require('./graphviz_class_hierarchy').draw_class_hierarchy("classes","png",ruby_style.known_classes, function () {
+    snooze.get('/class_picture.png', serve_binary('classes.png','image/png') );
     });
+snooze.get('/favicon.ico', serve_binary('classes.png','image/x-icon') );
 
 console.log('Should be 17: ',  util.inspect(object.find('number/17')));
 console.log('Should be "17": ',util.inspect(object.find('string/17')));
