@@ -1,3 +1,16 @@
+/*
+
+TODO:
+
+  * Give urls get, put, post, etc. methods
+  * Give urls parse methods
+  * Give strings as_url methods
+  * Have url() methods return a url (possibly through helper...?)
+  * Invoke dynamic
+  * status integration
+
+*/
+
 //              
 //   Preamble
 //
