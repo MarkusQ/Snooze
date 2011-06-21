@@ -126,35 +126,6 @@ Object.prototype.known_methods  = function () {
    };
 
 //
-// Add some more classes
-//
-var set_by_initialize = 'Should have been set when this object was initialized.';
-
-var help = class.new('help',object);
-
-var status = class.new('status',object,{ //);
-    initialize: function (code,name,description) {
-        //console.log("status#initialize("+code+",'"+name+"',description("+(description||'').length+")");
-        //this.super.initialize.apply(this);
-        this.code = code;
-        this.name = name;
-        this.description = description;
-      },
-    code: set_by_initialize,
-    name: set_by_initialize,
-    description: set_by_initialize
-  });
-
-fs.readFile('./statuses.zzd', 'utf8', function (err, data) {
-    if (err) throw err;
-    data.split('STATUS').map(function (s) {
-         var parsed = / *([\d_]+): *(.*)([^]*)/.exec(s);
-         if (parsed) {
-             status.new(parsed[1],parsed[2],parsed[3]);
-           }
-      });
-  });
-//
 //    HTML support
 //
 function div(class,contents) { return "<div class='"+class+"'>"+contents+"</div>"; }
@@ -205,18 +176,23 @@ var css = ["<style>",
     "div.post_method {",
     "    background-color:#ffa5b0;",
     "  }",
+    "div.help_text {",
+    "    background-color:#c0d0e4;",
+    "  }",
     "</style>"].join("\n")
 
 //
 //     Rest operations
 //
 
-object.instance_methods.url      = function () { return "/"+this.class.name+"/"+this.id() };
-object.instance_methods.id       = function () { return this.toString() };
-object.instance_methods.to_link  = function () { return "<a href="+this.url()+">"+this.toString()+"</a>" };
-object.instance_methods.to_html  = function () { 
+object.instance_methods.url        = function () { return "/"+this.class.name+"/"+this.id() };
+object.instance_methods.id         = function () { return this.toString() };
+object.instance_methods.to_link    = function () { return "<a href="+this.url()+">"+this.toString()+"</a>" };
+object.instance_methods.to_partial = function () { return this.to_link() };
+object.instance_methods.to_title   = function () { return "<h1>"+this.to_partial()+"</h1>" };
+object.instance_methods.to_html    = function () { 
     return  [
-      '<h1>'+this.to_link()+'</h1>',
+      this.to_title(),
       '<h2>Class</h2>'+this.class.to_link(),
       (this.known_methods && '<div><h2>Methods</h2>\n'+forms_for(this,this.known_methods())+'</div>'),
       ].join('')
@@ -278,11 +254,11 @@ class.instance_methods.destroy = function(req, res){
 class.instance_methods.url =  function () { return "/class/"+this.name };
 class.instance_methods.to_link =  function () { return "<a href='"+this.url()+"'>"+this.name+"</a>" };
 class.instance_methods.to_html = function () { return  [
-      '<h1>'+this.to_link()+'</h1>',
+      this.to_title(),
       this.super && ('<h2>Superclass</h2>'+this.super.to_link()),
       (this.known_methods && ('<div class=section><h2>Methods</h2>\n'+forms_for(this,this.known_methods()))+'</div>'),
       '<div class=section><h2>Instances</h2>',
-      (this.instances && this.instances.to_link() || "Too numerous to list".italics()),
+      (this.instances && this.instances.to_partial() || "Too numerous to list".italics()),
       '</div>'
     ].join('')
   };
@@ -292,10 +268,12 @@ class.instance_methods.index = function (req, res){ res.send(this.to_html()); };
 //
 //    Making native objects play too...
 //
-Object.prototype.url     = function() { return '' };
-Object.prototype.to_link = function() { return "<a href='"+this.url()+"'>"+this+"</a>" };
-Object.prototype.to_html = function() { return [
-      '<h1>'+this.to_link()+'</h1>',
+Object.prototype.url        = function() { return '' };
+Object.prototype.to_link    = function() { return "<a href='"+this.url()+"'>"+this+"</a>" };
+Object.prototype.to_partial = function() { return this.to_link() };
+Object.prototype.to_title   = function() { return "<h1>"+this.to_partial()+"</h1>" };
+Object.prototype.to_html    = function() { return [
+      this.to_title(),
       this.class && ('<h2>Class</h2>'+this.class.to_link()),
       (this.class.instance_methods.known_methods && ('<h2>Methods</h2>\n'+forms_for(this,this.class.instance_methods.known_methods())))
     ].join('')
@@ -303,10 +281,11 @@ Object.prototype.to_html = function() { return [
 Object.prototype.to_json = function() { return this };
 Object.prototype.to_format = function(format) {
     switch (format) {
-      case 'json':   return this.to_json();
-      case 'link':   return this.to_link();
+      case 'json':    return this.to_json();
+      case 'link':    return this.to_link();
+      case 'partial': return this.to_partial();
       case 'html':   
-      default:       return this.to_html();
+      default:        return this.to_html();
     }
   }
 Object.prototype.bind_REST_class = object.bind_REST_class;
@@ -315,8 +294,12 @@ Object.prototype.my = object.instance_methods;
 
 Boolean.prototype.url    = function () { return "/boolean/"+encodeURIComponent(this) };
 
-Array.prototype.url      = function () { return "/array/"+encodeURIComponent(this.map(function (x) { return x.url()}).join(',') ) };
-Array.prototype.to_link  = function () { 
+Array.prototype.url        = function () { return "/array/"+encodeURIComponent(this.map(function (x) { return x.url()}).join(',') ) };
+Array.prototype.to_title   = function () { return 
+    this.length == 0 ? "<h1>The empty array</h1>" 
+  : "<h1>The following "+this.length+"items</h1>"+this.to_partial() 
+  };
+Array.prototype.to_partial = function () { 
     return "<ul>"+
       this.map(function(item){ return '<li>'+((item && item.to_link && item.to_link()) || item || '<i>undefined</i>')+'</li>' ; }).join('\n') + 
       '</ul>';
@@ -434,7 +417,8 @@ lambda.instance_methods.apply = function (self,args) {
 lambda.instance_methods.to_string = function () {
     return 'λ('+[this.signature()].flatten().join(',')+')->\n'+[this.body].flatten().join("\n");
   }
-lambda.instance_methods.to_link  = function () { 
+lambda.instance_methods.to_title    = function () { return div('section',this.to_partial()) };
+lambda.instance_methods.to_partial  = function () { 
     return '<b>λ</b>('+[this.signature()].flatten().join(',')+')<b>-></b><blockquote>'+
         '<ol><li>'+[this.body].flatten().join("</li>\n<li>")+"\n</li></ol>"+
       "</blockquote>";
@@ -471,7 +455,68 @@ enumeration.new = function (name,values) {
 var http_method = enumeration.new('http_method',['post','get','put','del','head']);
 
 snooze.get('/', function(req, res){ res.redirect("/class") });
+//
+// Add some more classes
+//
+var set_by_initialize = 'Should have been set when this object was initialized.';
 
+var help = class.new('help',object,{
+    initialize: function (title,url_pattern,body) {
+        this.title       = title;
+        this.url_pattern = url_pattern;
+        this.body        = body;
+        help.instances.push(this);
+      },
+    title: set_by_initialize,
+    url_pattern: set_by_initialize,
+    body: set_by_initialize,
+    id:         function () { return this.title },
+    url:        function () { return "/help/"+encodeURIComponent(this.id()) },
+    to_link:    function () { return "<a href="+this.url()+">"+this.title+"</a>" },
+    to_title:   function () { return this.to_partial() },
+    to_partial: function () { return div('help_text',"<h4>"+this.title+"</h4>"+this.body) }
+  });
+help.instances = [];
+help.find =  function (id) {
+    if (id == '') return help;
+    return this.instances.find_first(function (x) { return x.id() == id; })
+  };
+
+fs.readFile('./help.zzd', 'utf8', function (err, data) {
+    if (err) throw err;
+    data.split('HELP').map(function (s) {
+         var parsed = / *(.+): *(.+)([^]*)/.exec(s);
+         if (parsed) {
+             help.new(parsed[2],parsed[1],parsed[3]);
+           }
+      });
+    console.log(help.find('/class/class'));
+  });
+
+var status = class.new('status',object,{
+    initialize: function (code,name,description) {
+        this.code = code;
+        this.name = name;
+        this.description = description;
+      },
+    code: set_by_initialize,
+    name: set_by_initialize,
+    description: set_by_initialize
+  });
+
+fs.readFile('./statuses.zzd', 'utf8', function (err, data) {
+    if (err) throw err;
+    data.split('STATUS').map(function (s) {
+         var parsed = / *([\d_]+): *(.*)([^]*)/.exec(s);
+         if (parsed) {
+             status.new(parsed[1],parsed[2],parsed[3]);
+           }
+      });
+  });
+
+//
+//
+//
 snooze.listen(2222);
 snooze.on('request', function (req,res) {
     console.log('Request from ',req.connection.remoteAddress,' for ',req.url);
