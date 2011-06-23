@@ -28,6 +28,8 @@ var object     = ruby_style.object
 
 var snooze     = express.createServer();
 snooze.use(express.bodyParser());
+snooze.use(snooze.router);
+snooze.use(express.static(__dirname));
     
 // The methodOverride middleware allows us
 // to set a hidden input of _method to an arbitrary
@@ -193,6 +195,7 @@ object.instance_methods.to_title   = function () { return "<h1>"+this.to_partial
 object.instance_methods.to_html    = function () { 
     return  [
       this.to_title(),
+      help.for(this.url()),
       '<h2>Class</h2>'+this.class.to_link(),
       (this.known_methods && '<div><h2>Methods</h2>\n'+forms_for(this,this.known_methods())+'</div>'),
       ].join('')
@@ -274,6 +277,7 @@ class.instance_methods.url =  function () { return "/class/"+this.name };
 class.instance_methods.to_link =  function () { return "<a href='"+this.url()+"'>"+this.name+"</a>" };
 class.instance_methods.to_html = function () { return  [
       this.to_title(),
+      help.for(this.url()),
       this.super && ('<h2>Superclass</h2>'+this.super.to_link()),
       (this.known_methods && ('<div class=section><h2>Methods</h2>\n'+forms_for(this,this.known_methods()))+'</div>'),
       '<div class=section><h2>Instances</h2>',
@@ -293,6 +297,7 @@ Object.prototype.to_partial = function() { return this.to_link() };
 Object.prototype.to_title   = function() { return "<h1>"+this.to_partial()+"</h1>" };
 Object.prototype.to_html    = function() { return [
       this.to_title(),
+      help.for(this.url()),
       this.class && ('<h2>Class</h2>'+this.class.to_link()),
       (this.class.instance_methods.known_methods && ('<h2>Methods</h2>\n'+forms_for(this,this.class.instance_methods.known_methods())))
     ].join('')
@@ -515,9 +520,10 @@ help.find =  function (id) {
   };
 
 help.for =  function (id) {
+    console.log("Searching for help for",id);
     var matches = [];
-    this.instances.map(function (x) { if (x.url_pattern.test(url)) matches.push(x); })
-    return matches;
+    this.instances.map(function (x) { if (x.url_pattern.test(id)) matches.push(x.to_partial()); })
+    return matches.join('');
   };
 
 fs.readFile('./help.zzd', 'utf8', function (err, data) {
@@ -576,11 +582,27 @@ function serve_binary(file_name,mime_type) {
       }
   };
 
+function serve_directory(dir_name,mime_type) {
+    return function(req, res){
+        console.log("Reading "+dir_name+'/'+req.params.file);
+        fs.readFile(dir_name+'/'+req.params.file, "binary", function(err, contents) {  
+            if (err) {  
+                res.writeHead(500, {"Content-Type": "text/plain"});  
+                res.write(err + "\n");  
+              } else {    
+                res.send(contents);
+              }
+          })
+      }
+  };
+
 
 require('./graphviz_class_hierarchy').draw_class_hierarchy("classes","png",ruby_style.known_classes, function () {
     snooze.get('/class_picture.png', serve_binary('classes.png','image/png') );
     });
 snooze.get('/favicon.ico', serve_binary('classes.png','image/x-icon') );
+//snooze.get('/slideshow/:file',    serve_directory('slideshow') );
+//snooze.get('/slideshow/s6/:file', serve_directory('slideshow/s6') );
 
 console.log('Should be 17: ',  util.inspect(object.find('number/17')));
 console.log('Should be "17": ',util.inspect(object.find('string/17')));
