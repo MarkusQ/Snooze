@@ -170,7 +170,7 @@ digraph snooze {
     node_21 [label="{class\nmethods\n|new\lmy\linstance_methods\lsuper\lname\l}"]
     node_24 [label="{instance\nmethods\n|my\lsuper\lclass\l}"]
     node_22 [label="{instance\nmethods\n|my\lsuper\lclass\l}"]
-    node_25 [label="{class\nmethods\n|my\linstance_methods\linstances\lfind\lsuper\lname\l}"]
+    node_25 [label="{class\nmethods\n|for\lmy\linstance_methods\linstances\lfind\lsuper\lname\l}"]
     node_1 [label="{class\nmethods\n|my\linstance_methods\lfind\lsuper\lname\l}"]
     node_26 [label="{instance\nmethods\n|my\lbody\lto_title\lto_link\linitialize\lid\lsuper\lclass\lto_partial\ltitle\lurl_pattern\lurl\l}"]
     node_2 [label="{instance\nmethods\n|to_title\lto_link\linitialize\lid\lto_html\lclass\lto_partial\lurl\l}"]

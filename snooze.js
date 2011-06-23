@@ -206,13 +206,30 @@ class.instance_methods.bind_REST_class = function (name) {
     console.log('Listening for: '+path+'/:id and routing to '+this.class.name);
     snooze.get(path + '/:id',          this.bound_method('show'));
     snooze.del(path + '/:id',          this.bound_method('destroy'));
-    snooze.get(path + '/:id/:message', function(req,res) {
+    snooze.get(path + '/:id/:message/edit', function(req,res) {
         var message = req.params.message;
         var target = this_class.find(req.params.id);
         if (target == no_such_object) {
             res.writeHeader(400,req.params.id);
             res.write(400,req.params.id);
             res.end();
+          } else {
+            var result = (target.hasOwnProperty(message) ? target[message] : target.my[message]);
+            //console.log(target.class.name,target.to_string(),req.params.message,result.to_string())
+            res.redirect(result.url()+'/_edit?target='+target.url()+'&member='+message);
+          }
+      });
+    snooze.get(path + '/:id/:message', function(req,res) {
+        var message = req.params.message;
+        var target = this_class.find(req.params.id);
+        console.log("rq = ",req.query.length,util.inspect(req.query));
+        if (target == no_such_object) {
+            res.writeHeader(404,req.params.id);
+            res.write(404,req.params.id);
+            res.end();
+          } else if (Object.getOwnPropertyNames(req.query).length > 0) {
+            console.log("message: ",message);
+            res.send(target[message](req.query));
           } else {
             var result = (target.hasOwnProperty(message) ? target[message] : target.my[message]);
             //console.log(target.class.name,target.to_string(),req.params.message,result.to_string())
@@ -223,8 +240,10 @@ class.instance_methods.bind_REST_class = function (name) {
         var message = req.params.message;
         var target = this_class.find(req.params.id);
         var result = (target.hasOwnProperty(message) ? target[message] : target.my[message]);
+        console.log("Req.body = ",util.inspect(req.body));
         var args = [];
         for (arg in req.body) if (req.body.hasOwnProperty(arg)) args.push(object.find(req.body[arg]));
+        console.log("Calling ",message," with ",util.inspect(args));
         //console.log(target.class.name,util.inspect(target),req.params.message,util.inspect(result),util.inspect(args));
         result = result.apply(target,args);
         //console.log('result: ',util.inspect(result));
@@ -291,6 +310,19 @@ Object.prototype.to_format = function(format) {
 Object.prototype.bind_REST_class = object.bind_REST_class;
 Object.prototype.class = object;
 Object.prototype.my = object.instance_methods;
+Object.prototype._edit      = function (args) {
+    return "<h1>Edit "+args.target.to_link()+"</h1>"+form('post',args.target+'/_put',[
+        "<input type=hidden name='_member' value="+args.member.url()+">",
+        "<lable for='_new_value'>"+args.member+": </label>"+"<textarea name='_new_value'>"+this.url()+"</textarea>",
+        "<input type=submit value=save>"
+    ]);    
+  };
+
+Object.prototype._put = function(member,new_value) {
+    if (this.hasOwnProperty(member)) this[member] = new_value;
+    return this;
+  };
+
 
 Boolean.prototype.url    = function () { return "/boolean/"+encodeURIComponent(this) };
 
@@ -463,7 +495,7 @@ var set_by_initialize = 'Should have been set when this object was initialized.'
 var help = class.new('help',object,{
     initialize: function (title,url_pattern,body) {
         this.title       = title;
-        this.url_pattern = url_pattern;
+        this.url_pattern = new RegExp(url_pattern);
         this.body        = body;
         help.instances.push(this);
       },
@@ -480,6 +512,12 @@ help.instances = [];
 help.find =  function (id) {
     if (id == '') return help;
     return this.instances.find_first(function (x) { return x.id() == id; })
+  };
+
+help.for =  function (id) {
+    var matches = [];
+    this.instances.map(function (x) { if (x.url_pattern.test(url)) matches.push(x); })
+    return matches;
   };
 
 fs.readFile('./help.zzd', 'utf8', function (err, data) {
@@ -519,7 +557,7 @@ fs.readFile('./statuses.zzd', 'utf8', function (err, data) {
 //
 snooze.listen(2222);
 snooze.on('request', function (req,res) {
-    console.log('Request from ',req.connection.remoteAddress,' for ',req.url);
+    console.log('Request from ',req.connection.remoteAddress,' for ',req.method,':',req.url);
   });
 console.log('Snooze started on port 2222');
 
